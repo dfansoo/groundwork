@@ -14,7 +14,7 @@ export default async function AccountPage() {
 
   return (
     <Container className="py-16">
-      <h1 className="font-heading mb-8 text-3xl font-semibold tracking-tight">Account</h1>
+      <h1 className="mb-8 font-heading text-3xl font-semibold tracking-tight">Account</h1>
       <AccountPanels />
     </Container>
   );

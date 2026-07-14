@@ -28,15 +28,16 @@ function applyBackend(token: JWT, backend: BackendTokens): JWT {
 // Google is optional (see .env.example). Registering it with empty credentials
 // makes Auth.js reject the whole config, which takes email/password sign-in down
 // with it — so it is only added when it is actually configured.
-const googleProvider = env.AUTH_GOOGLE_ID && env.AUTH_GOOGLE_SECRET
-  ? [
-      Google({
-        clientId: env.AUTH_GOOGLE_ID,
-        clientSecret: env.AUTH_GOOGLE_SECRET,
-        authorization: { params: { access_type: "offline", prompt: "consent" } },
-      }),
-    ]
-  : [];
+const googleProvider =
+  env.AUTH_GOOGLE_ID && env.AUTH_GOOGLE_SECRET
+    ? [
+        Google({
+          clientId: env.AUTH_GOOGLE_ID,
+          clientSecret: env.AUTH_GOOGLE_SECRET,
+          authorization: { params: { access_type: "offline", prompt: "consent" } },
+        }),
+      ]
+    : [];
 
 const nextAuth = NextAuth({
   session: { strategy: "jwt" },
@@ -65,7 +66,10 @@ const nextAuth = NextAuth({
     async jwt({ token, user, account, profile }) {
       // First sign-in via Google → exchange the identity for backend tokens.
       if (account?.provider === "google" && profile) {
-        const backend = await exchangeGoogle(profile as GoogleProfileLike, account as GoogleAccountLike);
+        const backend = await exchangeGoogle(
+          profile as GoogleProfileLike,
+          account as GoogleAccountLike,
+        );
         if (!backend) {
           token.error = "RefreshTokenError";
           return token;

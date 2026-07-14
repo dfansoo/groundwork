@@ -14,17 +14,15 @@ export function AppShell({
 }) {
   return (
     <div className="flex min-h-dvh">
-      <aside className="bg-sidebar border-sidebar-border flex w-60 shrink-0 flex-col border-r p-4">
-        <Link href="/" className="font-heading mb-6 px-3 text-lg font-semibold tracking-tight">
+      <aside className="flex w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar p-4">
+        <Link href="/" className="mb-6 px-3 font-heading text-lg font-semibold tracking-tight">
           Groundwork
         </Link>
 
         <SidebarNav roles={roles} />
 
         <div className="mt-auto space-y-2 px-3 pt-6">
-          {email ? (
-            <p className="text-muted-foreground truncate text-xs">{email}</p>
-          ) : null}
+          {email ? <p className="truncate text-xs text-muted-foreground">{email}</p> : null}
           <SignOutButton />
         </div>
       </aside>

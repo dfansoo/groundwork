@@ -43,23 +43,37 @@ export function LoginForm({ callbackUrl = "/account" }: { callbackUrl?: string }
   return (
     <div className="space-y-5">
       <GoogleButton callbackUrl={callbackUrl} />
-      <div className="text-muted-foreground flex items-center gap-3 text-xs">
-        <span className="bg-border h-px flex-1" /> or <span className="bg-border h-px flex-1" />
+      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+        <span className="h-px flex-1 bg-border" /> or <span className="h-px flex-1 bg-border" />
       </div>
       <form onSubmit={submit} className="space-y-4" noValidate>
         {errors.form && (
-          <p className="text-destructive text-sm" role="alert">
+          <p className="text-sm text-destructive" role="alert">
             {errors.form}
           </p>
         )}
         <Field>
           <FieldLabel htmlFor="login-email">Email</FieldLabel>
-          <Input id="login-email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} aria-invalid={!!errors.email} />
+          <Input
+            id="login-email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            aria-invalid={!!errors.email}
+          />
           <FieldError>{errors.email}</FieldError>
         </Field>
         <Field>
           <FieldLabel htmlFor="login-password">Password</FieldLabel>
-          <Input id="login-password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} aria-invalid={!!errors.password} />
+          <Input
+            id="login-password"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            aria-invalid={!!errors.password}
+          />
           <FieldError>{errors.password}</FieldError>
         </Field>
         <div className="text-right text-sm">
@@ -71,7 +85,7 @@ export function LoginForm({ callbackUrl = "/account" }: { callbackUrl?: string }
           {submitting ? "Signing in…" : "Sign in"}
         </Button>
       </form>
-      <p className="text-muted-foreground text-center text-sm">
+      <p className="text-center text-sm text-muted-foreground">
         New here?{" "}
         <Link href="/register" className="text-primary hover:underline">
           Create an account

@@ -36,11 +36,11 @@ export function ForgotPasswordForm() {
   if (sent) {
     return (
       <div className="space-y-4 text-center">
-        <p className="font-serif text-primary text-2xl font-semibold">Check your inbox</p>
-        <p className="text-muted-foreground text-sm">
+        <p className="font-serif text-2xl font-semibold text-primary">Check your inbox</p>
+        <p className="text-sm text-muted-foreground">
           If an account exists for that email, we&apos;ve sent a link to reset your password.
         </p>
-        <Link href="/login" className="text-primary inline-block text-sm hover:underline">
+        <Link href="/login" className="inline-block text-sm text-primary hover:underline">
           Back to sign in
         </Link>
       </div>
@@ -49,19 +49,28 @@ export function ForgotPasswordForm() {
 
   return (
     <form onSubmit={submit} className="space-y-4" noValidate>
-      <p className="text-muted-foreground text-sm">
+      <p className="text-sm text-muted-foreground">
         Enter your email and we&apos;ll send you a link to reset your password.
       </p>
       <Field>
         <FieldLabel htmlFor="forgot-email">Email</FieldLabel>
-        <Input id="forgot-email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} aria-invalid={!!error} />
+        <Input
+          id="forgot-email"
+          type="email"
+          autoComplete="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          aria-invalid={!!error}
+        />
         <FieldError>{error}</FieldError>
       </Field>
       <Button type="submit" size="lg" disabled={submitting} className="w-full">
         {submitting ? "Sending…" : "Send reset link"}
       </Button>
-      <p className="text-muted-foreground text-center text-sm">
-        <Link href="/login" className="text-primary hover:underline">Back to sign in</Link>
+      <p className="text-center text-sm text-muted-foreground">
+        <Link href="/login" className="text-primary hover:underline">
+          Back to sign in
+        </Link>
       </p>
     </form>
   );

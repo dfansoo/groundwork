@@ -10,7 +10,9 @@ export default function RegisterPage() {
       <main>
         <Container className="flex min-h-[70vh] items-center justify-center py-16">
           <div className="w-full max-w-sm">
-            <h1 className="font-serif text-primary mb-6 text-center text-3xl font-semibold">Create your account</h1>
+            <h1 className="mb-6 text-center font-serif text-3xl font-semibold text-primary">
+              Create your account
+            </h1>
             <RegisterForm />
           </div>
         </Container>

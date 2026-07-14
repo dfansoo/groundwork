@@ -28,8 +28,25 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Health check endpoint */
+        /** Readiness check — verifies the database */
         get: operations["AppController_getHealth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/health/live": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Liveness check — process only, no dependencies */
+        get: operations["AppController_getLiveness"];
         put?: never;
         post?: never;
         delete?: never;
@@ -66,6 +83,23 @@ export interface paths {
         put?: never;
         /** Log in and get a JWT */
         post: operations["AuthController_login_v1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/change-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Change your own password; revokes every other session */
+        post: operations["AuthController_changePassword_v1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -541,6 +575,12 @@ export interface components {
              */
             password: string;
         };
+        ChangePasswordDto: {
+            /** @example CurrentPass123! */
+            currentPassword: string;
+            /** @example NewPass123! */
+            newPassword: string;
+        };
         ForgotPasswordDto: {
             /** @example user@example.com */
             email: string;
@@ -722,6 +762,31 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description A dependency is unavailable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AppController_getLiveness: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Process is alive. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     AuthController_register_v1: {
@@ -751,6 +816,13 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Too many requests. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     AuthController_login_v1: {
@@ -774,6 +846,49 @@ export interface operations {
                 content?: never;
             };
             /** @description Unauthorized. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Account temporarily locked. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Too many requests. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthController_changePassword_v1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePasswordDto"];
+            };
+        };
+        responses: {
+            /** @description Password updated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Current password is incorrect. */
             401: {
                 headers: {
                     [name: string]: unknown;

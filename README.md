@@ -32,23 +32,26 @@ gh repo create my-app --template dfansoo/groundwork --private --clone
 
 ## Stack
 
-| | |
-|---|---|
-| <img src="https://cdn.simpleicons.org/turborepo/EF4444" width="16" height="16" align="center" /> **Monorepo** | Turborepo 2.9, Bun workspaces |
+|                                                                                                                         |                                                                                  |
+| ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| <img src="https://cdn.simpleicons.org/turborepo/EF4444" width="16" height="16" align="center" /> **Monorepo**           | Turborepo 2.9, Bun workspaces                                                    |
 | <img src="https://cdn.simpleicons.org/nextdotjs/000000/FFFFFF" width="16" height="16" align="center" /> **Web / Admin** | Next.js 16, React 19, Tailwind v4, shadcn (`base-maia`, Base UI), TanStack Query |
-| <img src="https://cdn.simpleicons.org/nestjs/E0234E" width="16" height="16" align="center" /> **API** | NestJS 11, Prisma 7, PostgreSQL |
-| <img src="https://cdn.simpleicons.org/auth0/EB5424" width="16" height="16" align="center" /> **Auth** | NestJS issues ES256 JWTs; NextAuth v5 is a session shim |
-| <img src="https://cdn.simpleicons.org/vitest/6E9F18" width="16" height="16" align="center" /> **Tests** | Vitest (web/admin), Jest (backend), Playwright (e2e, against the real API) |
+| <img src="https://cdn.simpleicons.org/nestjs/E0234E" width="16" height="16" align="center" /> **API**                   | NestJS 11, Prisma 7, PostgreSQL                                                  |
+| <img src="https://cdn.simpleicons.org/auth0/EB5424" width="16" height="16" align="center" /> **Auth**                   | NestJS issues ES256 JWTs; NextAuth v5 is a session shim                          |
+| <img src="https://cdn.simpleicons.org/vitest/6E9F18" width="16" height="16" align="center" /> **Tests**                 | Vitest (web/admin), Jest (backend), Playwright (e2e, against the real API)       |
 
 ## What's already built
 
-- **Auth** — email/password + Google OAuth, ES256 JWTs, refresh rotation, session listing and revocation, password reset
+- **Auth** — email/password + Google OAuth, ES256 JWTs, refresh rotation, session listing and revocation, password reset, password change
 - **RBAC** — five roles, seven permissions, enforced by guards on every route, not merely hidden in the UI
-- **Audit log** — every mutation recorded against the acting user, with a CSV export
+- **Brute-force defence** — rate limits per IP _and_ per (IP, account), plus an account lockout after ten consecutive failures, which is the only part that survives an attacker rotating IPs
+- **Admin console** — items, staff (grant and revoke roles) and the audit log, all paginated and permission-gated
+- **Audit log** — every mutation recorded against the acting user, filterable, with a CSV export
 - **File uploads** — presigned uploads, an orphan sweep, and a disk driver, so you need **no AWS account to run it**
 - **Transactional email** — Handlebars templates; renders to the server log in dev, Brevo in prod
-- **Typed API client** — generated from the backend's OpenAPI contract, so frontend types *cannot* drift from the API
-- **Tests that mean something** — e2e runs against the real backend and database, not a mock
+- **Typed API client** — generated from the backend's OpenAPI contract, so frontend types _cannot_ drift from the API
+- **Docker** — three images, built from the repo root, built on every CI run so they cannot rot
+- **Tests that mean something** — the e2e and integration suites run against the real backend and a real database, not a mock
 
 ## Layout
 
@@ -66,7 +69,7 @@ packages/
 
 ## Quick start
 
-You need **Bun 1.3+**, **Node 20+**, and **PostgreSQL** (natively, or `docker compose up -d db` inside `apps/backend`).
+You need **Bun 1.3+**, **Node 20+**, and **PostgreSQL** (natively, or `docker compose up -d db` from the repo root).
 
 ```bash
 bun install
@@ -90,15 +93,31 @@ Sign in at <http://localhost:3001> with the seeded admin — `admin@example.com`
 
 **No cloud account is needed.** `FILES_DRIVER=local` writes uploads to disk, and `MAIL_TRANSPORT=log` renders emails into the server log. Switch to `s3` and `brevo` for production.
 
+## The whole stack in Docker
+
+```bash
+cp .env.example .env                       # three secrets: openssl rand -base64 32
+cd apps/backend && bun run keys:generate   # mounted into the container, never baked in
+cd .. && docker compose up --build
+```
+
+Every image builds from the **repo root** — a Bun workspace only resolves from there:
+
+```bash
+docker build -f apps/backend/Dockerfile -t groundwork-backend .
+```
+
+The signing keys are mounted, not copied in. A key inside an image layer is a key held by everyone who can pull the image, and rebuilding it would invalidate every live token. Migrations and seeding are opt-in (`RUN_MIGRATIONS`, `RUN_SEED`) so that N replicas do not race the same schema change on boot.
+
 ## Starting a real feature
 
 `items` is the example, threaded end to end so every layer is visible at once:
 
-| Layer | Path |
-|---|---|
-| API | `apps/backend/src/items/` + the `Item` model in `prisma/schema.prisma` |
-| Admin UI | `apps/admin/features/items/` + `app/(dashboard)/items/` |
-| Public UI | `apps/web/app/items/` |
+| Layer     | Path                                                                   |
+| --------- | ---------------------------------------------------------------------- |
+| API       | `apps/backend/src/items/` + the `Item` model in `prisma/schema.prisma` |
+| Admin UI  | `apps/admin/features/items/` + `app/(dashboard)/items/`                |
+| Public UI | `apps/web/app/items/`                                                  |
 
 Copy those, rename, delete the originals. Between them they demonstrate validated DTOs, a slug derived from the title, RBAC at the controller, an audit-log entry on every mutation, soft deletes, and file attachment.
 
@@ -108,21 +127,25 @@ Adding a resource usually means: a Prisma model → a backend module → a `*_RE
 
 **The backend is the identity source of truth.** NestJS owns users, password hashing, ES256 JWTs, refresh rotation, session revocation and OAuth provider linking. NextAuth exists in the frontends only to run the Google redirect dance and to hold the backend's tokens in an encrypted cookie. Web, admin, and any future mobile client all authenticate the same way.
 
-*Better Auth was considered and rejected*: it is an auth **server**, so putting it in the frontends would stand a second one in front of the real one, with two session stores that can disagree. The reasoning is in [the design spec](docs/2026-07-14-groundwork-design.md).
+_Better Auth was considered and rejected_: it is an auth **server**, so putting it in the frontends would stand a second one in front of the real one, with two session stores that can disagree. The reasoning is in [the design spec](docs/2026-07-14-groundwork-design.md).
 
 **Types cannot drift from the API.** The backend emits `openapi.json`; `@workspace/api-client` generates its types from it. Turbo runs `backend#openapi` before the client builds, so changing a route breaks the frontend build rather than production.
 
 **Permissions are enforced server-side.** `apps/admin/lib/permissions.ts` mirrors the backend's map, but only to decide which nav entries and buttons to render. Every call is authorized by `PermissionsGuard` — a tampered client gets a 403, not access.
 
+**Nothing is trusted until it has been run.** Unit tests mock the repository, which means they cannot tell you whether a guard is actually _attached_ to a route: a controller that lost its `@UseGuards` would pass all of them. `apps/backend/test/` drives the real HTTP stack — router, pipes, guards, Prisma, Postgres — and asserts that a `VIEWER` really does get a 403 from `POST /v1/admin/items`. CI builds the Docker images for the same reason.
+
 ## Commands
 
-| | |
-|---|---|
-| `bun dev` | everything, in parallel |
-| `bun run build` | build all (regenerates the API client first) |
-| `bun run test` | Vitest + Jest |
-| `bunx turbo test:e2e` | Playwright — **needs the backend running and seeded** |
-| `bun run lint` · `bun run typecheck` | across the workspace |
+|                                        |                                                               |
+| -------------------------------------- | ------------------------------------------------------------- |
+| `bun dev`                              | everything, in parallel                                       |
+| `bun run build`                        | build all (regenerates the API client first)                  |
+| `bun run test`                         | Vitest + Jest                                                 |
+| `bun run test:int` (in `apps/backend`) | HTTP-level tests against a real database — **needs Postgres** |
+| `bunx turbo test:e2e`                  | Playwright — **needs the backend running and seeded**         |
+| `bun run lint` · `bun run typecheck`   | across the workspace                                          |
+| `bun run format`                       | Prettier; CI fails on anything unformatted                    |
 
 Backend-only: `db:migrate`, `db:seed`, `keys:generate`, `openapi`.
 

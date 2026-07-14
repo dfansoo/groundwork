@@ -19,7 +19,8 @@ function stubEnvForDocumentGeneration(): void {
   process.env.OPENAPI_ONLY = '1';
 
   process.env.NODE_ENV ??= 'development';
-  process.env.DATABASE_URL ??= 'postgresql://localhost:5432/openapi-not-connected';
+  process.env.DATABASE_URL ??=
+    'postgresql://localhost:5432/openapi-not-connected';
   process.env.DATA_ENCRYPTION_KEY ??= Buffer.alloc(32).toString('base64');
 
   const hasKeys =

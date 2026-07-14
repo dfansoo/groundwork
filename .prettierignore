@@ -5,3 +5,18 @@ node_modules/
 coverage/
 pnpm-lock.yaml
 .pnpm-store/
+bun.lock
+
+# Generated. Formatting these would fight the tools that write them — CI
+# regenerates openapi.json and fails if it differs from what is committed, so a
+# reformat here would break the build on every run.
+apps/backend/openapi.json
+packages/api-client/src/schema.d.ts
+
+# Prisma owns the formatting of these (`prisma format`), and prettier has no
+# parser for .prisma or the generated SQL.
+apps/backend/prisma/migrations/
+
+# Playwright output.
+playwright-report/
+test-results/

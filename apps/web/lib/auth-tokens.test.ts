@@ -5,11 +5,13 @@ process.env.AUTH_EXCHANGE_SECRET = "shh";
 
 import { loginWithPassword, exchangeGoogle, refreshTokens, revokeSession } from "@/lib/auth-tokens";
 
-const jwtWithExp = (expSeconds: number) =>
-  `h.${btoa(JSON.stringify({ exp: expSeconds }))}.s`;
+const jwtWithExp = (expSeconds: number) => `h.${btoa(JSON.stringify({ exp: expSeconds }))}.s`;
 
 const envelope = (data: unknown) =>
-  new Response(JSON.stringify({ success: true, data }), { status: 200, headers: { "content-type": "application/json" } });
+  new Response(JSON.stringify({ success: true, data }), {
+    status: 200,
+    headers: { "content-type": "application/json" },
+  });
 const authData = {
   user: { id: "u1", username: "Jan Kowalski", email: "jan@x.com", avatar: null },
   access_token: jwtWithExp(2_000_000_000),
@@ -23,7 +25,10 @@ describe("auth-tokens", () => {
   it("loginWithPassword returns normalized tokens on success", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(envelope(authData));
     const res = await loginWithPassword("jan@x.com", "pw");
-    expect(fetchMock).toHaveBeenCalledWith("http://backend.test/v1/auth/login", expect.objectContaining({ method: "POST" }));
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://backend.test/v1/auth/login",
+      expect.objectContaining({ method: "POST" }),
+    );
     expect(res).toMatchObject({
       user: { id: "u1", name: "Jan Kowalski", email: "jan@x.com", avatar: null },
       accessToken: authData.access_token,
@@ -40,14 +45,34 @@ describe("auth-tokens", () => {
   it("exchangeGoogle sends the exchange secret header and a mapped identity", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(envelope(authData));
     await exchangeGoogle(
-      { sub: "g1", email: "jan@x.com", name: "Jan Kowalski", picture: "https://pic", email_verified: true },
-      { providerAccountId: "g1", access_token: "ga", refresh_token: "gr", expires_at: 123, token_type: "Bearer", scope: "openid email", id_token: "id" },
+      {
+        sub: "g1",
+        email: "jan@x.com",
+        name: "Jan Kowalski",
+        picture: "https://pic",
+        email_verified: true,
+      },
+      {
+        providerAccountId: "g1",
+        access_token: "ga",
+        refresh_token: "gr",
+        expires_at: 123,
+        token_type: "Bearer",
+        scope: "openid email",
+        id_token: "id",
+      },
     );
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe("http://backend.test/v1/auth/exchange");
     expect((init.headers as Record<string, string>)["x-auth-exchange-secret"]).toBe("shh");
     const body = JSON.parse(init.body as string);
-    expect(body).toMatchObject({ provider: "google", providerAccountId: "g1", email: "jan@x.com", username: "Jan Kowalski", avatar: "https://pic" });
+    expect(body).toMatchObject({
+      provider: "google",
+      providerAccountId: "g1",
+      email: "jan@x.com",
+      username: "Jan Kowalski",
+      avatar: "https://pic",
+    });
     expect(typeof body.emailVerifiedAt).toBe("string");
   });
 

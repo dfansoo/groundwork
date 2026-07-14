@@ -24,7 +24,12 @@ export async function uploadImage(file: File, kind = "item"): Promise<UploadedIm
 
   const ticket = await bffFetch<{ assetId: string; uploadUrl: string }>("admin/files/uploads", {
     method: "POST",
-    body: JSON.stringify({ visibility: "public", kind, filename: file.name, contentType: file.type }),
+    body: JSON.stringify({
+      visibility: "public",
+      kind,
+      filename: file.name,
+      contentType: file.type,
+    }),
   });
 
   const put = await fetch(ticket.uploadUrl, {

@@ -17,7 +17,10 @@ describe("applyApiErrors", () => {
     ]);
     const result = applyApiErrors(error, setError);
     expect(result).toBe(true);
-    expect(setError).toHaveBeenCalledWith("email", { type: "server", message: "Enter a valid email" });
+    expect(setError).toHaveBeenCalledWith("email", {
+      type: "server",
+      message: "Enter a valid email",
+    });
   });
 
   it("returns false when the ApiError has no details", () => {

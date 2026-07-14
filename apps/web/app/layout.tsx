@@ -24,7 +24,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       lang="en"
       suppressHydrationWarning
       className={cn(
-        "antialiased font-sans",
+        "font-sans antialiased",
         fontSans.variable,
         fontHeading.variable,
         fontMono.variable,

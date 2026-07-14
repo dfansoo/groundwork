@@ -11,7 +11,9 @@ export function applyApiErrors<T extends FieldValues>(
   // The backend exception filter double-wraps validation details as `{ details: [...] }`
   // (it re-nests the thrown body's own `details` key). Accept the flat array OR the wrapped shape.
   const raw = error.details;
-  const details: unknown = Array.isArray(raw) ? raw : (raw as { details?: unknown } | null)?.details;
+  const details: unknown = Array.isArray(raw)
+    ? raw
+    : (raw as { details?: unknown } | null)?.details;
   if (!Array.isArray(details)) return false;
   let applied = false;
   for (const d of details as Array<{ property?: string; constraints?: Record<string, string> }>) {

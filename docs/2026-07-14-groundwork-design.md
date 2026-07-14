@@ -13,18 +13,18 @@ Ships as a **private GitHub template repository** at `dfansoo/groundwork`, so ne
 gh repo create my-app --template dfansoo/groundwork --private
 ```
 
-The name is deliberately about *purpose*, not *stack* — it stays honest if a layer is swapped later.
+The name is deliberately about _purpose_, not _stack_ — it stays honest if a layer is swapped later.
 
 ## Source material
 
 Four separate repos in the `Code-Xeed` org, each with its own git history:
 
-| Repo | Stack | Role here |
-|---|---|---|
-| `ceylon-…-backend` | NestJS 11, Prisma 7, Postgres, Bun | Source of the hardened API spine |
-| `ceylon-…-web` | Next.js 16, React 19, Tailwind v4 | Source of frontend auth/session logic |
-| `ceylon-…-admin` | Same + `features/` layer | Source of admin shell, permissions, upload |
-| `ceylon-…-infra` | Terraform | **Out of scope** (see Non-goals) |
+| Repo               | Stack                              | Role here                                  |
+| ------------------ | ---------------------------------- | ------------------------------------------ |
+| `ceylon-…-backend` | NestJS 11, Prisma 7, Postgres, Bun | Source of the hardened API spine           |
+| `ceylon-…-web`     | Next.js 16, React 19, Tailwind v4  | Source of frontend auth/session logic      |
+| `ceylon-…-admin`   | Same + `features/` layer           | Source of admin shell, permissions, upload |
+| `ceylon-…-infra`   | Terraform                          | **Out of scope** (see Non-goals)           |
 
 The backend's `package.json` is already named `nestjs-boilerplate` — it descends from a boilerplate, and this spec returns it to that role.
 
@@ -94,7 +94,7 @@ NestJS owns `User`, `Account`, `AuthSession`, `PasswordResetToken`; bcrypt hashi
 1. Runs the Google OAuth redirect dance, then trades the profile for backend tokens at `POST /auth/exchange` (protected by `ExchangeSecretGuard` and a shared secret).
 2. Holds the backend access/refresh tokens in an encrypted cookie, refreshing them against `POST /auth/refresh` and revoking at `POST /auth/logout` on sign-out.
 
-**Better Auth was considered and rejected.** It is an auth *server* — it wants to own the user/session/account tables and issue its own sessions. Using it in the frontends would put a second auth server in front of the real one, with two session stores that can disagree. Using it *properly* would mean mounting it inside NestJS and rewriting the hardened auth module and all four guards on a community Nest adapter — i.e. rewriting the most security-critical code we own at the exact moment we are trying to preserve it. Rejected on risk.
+**Better Auth was considered and rejected.** It is an auth _server_ — it wants to own the user/session/account tables and issue its own sessions. Using it in the frontends would put a second auth server in front of the real one, with two session stores that can disagree. Using it _properly_ would mean mounting it inside NestJS and rewriting the hardened auth module and all four guards on a community Nest adapter — i.e. rewriting the most security-critical code we own at the exact moment we are trying to preserve it. Rejected on risk.
 
 **Beta risk is accepted and contained.** `next-auth@5.0.0-beta.*` has been in beta a long time. Exposure is one ~100-line file per app; because the backend owns everything real, it can be swapped for a `jose` encrypted-cookie session without touching the backend. Documented as a known escape hatch.
 
@@ -108,12 +108,12 @@ NestJS owns `User`, `Account`, `AuthSession`, `PasswordResetToken`; bcrypt hashi
 
 ### Modules
 
-| Kept (the spine) | Dropped (Ceylon domain) |
-|---|---|
-| `auth`, `users`, `staff` | `bookings`, `catalog`, `tours`, `hotels` |
-| `prisma`, `config`, `audit` | `packages`, `pricing`, `guides` |
-| `files`, `mail`, `common`, `utils`, `types` | `tourists`, `documents`, `inquiries` |
-| `items` *(new — the example feature)* | `common/currency` |
+| Kept (the spine)                            | Dropped (Ceylon domain)                  |
+| ------------------------------------------- | ---------------------------------------- |
+| `auth`, `users`, `staff`                    | `bookings`, `catalog`, `tours`, `hotels` |
+| `prisma`, `config`, `audit`                 | `packages`, `pricing`, `guides`          |
+| `files`, `mail`, `common`, `utils`, `types` | `tourists`, `documents`, `inquiries`     |
+| `items` _(new — the example feature)_       | `common/currency`                        |
 
 `common` keeps `pagination`, `sorting`, `slug`, and `crypto`. `currency` is pricing-domain and goes. `inquiries/captcha` (Cloudflare Turnstile) goes with `inquiries`; `TURNSTILE_SECRET_KEY` is dropped from the env schema.
 
@@ -129,7 +129,7 @@ NestJS owns `User`, `Account`, `AuthSession`, `PasswordResetToken`; bcrypt hashi
 
 These are defects in the source, not features to preserve.
 
-**1. CORS is silently wide open.** `main.ts` enables CORS three times — `NestFactory.create({ cors: true })`, then `enableCors({ origin: ALLOWED_ORIGINS, credentials: true })`, then a bare `app.enableCors()`. The last call wins and resets origin to `*`, so the `ALLOWED_ORIGINS` allowlist never takes effect. The boilerplate calls `enableCors` **once**, with the allowlist. *(Ceylon should be patched separately — out of scope here.)*
+**1. CORS is silently wide open.** `main.ts` enables CORS three times — `NestFactory.create({ cors: true })`, then `enableCors({ origin: ALLOWED_ORIGINS, credentials: true })`, then a bare `app.enableCors()`. The last call wins and resets origin to `*`, so the `ALLOWED_ORIGINS` allowlist never takes effect. The boilerplate calls `enableCors` **once**, with the allowlist. _(Ceylon should be patched separately — out of scope here.)_
 
 **2. A fresh clone cannot boot.** `DATA_ENCRYPTION_KEY`, `AWS_REGION`, `ASSETS_BUCKET`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `CLOUDFRONT_DOMAIN`, and `CLOUDFRONT_KEY_PAIR_ID` are all `Joi.required()`, so the API refuses to start without a real AWS account and a CloudFront keypair. The boilerplate introduces `FILES_DRIVER=local|s3` (default `local`), mirroring the existing `MAIL_TRANSPORT=log|brevo` pattern: `local` writes uploads to disk and serves them directly, and the AWS/CloudFront vars become required **only when** `FILES_DRIVER=s3`. `DATA_ENCRYPTION_KEY` stays required but the setup script generates one into `.env` on first run.
 
@@ -180,11 +180,11 @@ Both apps share `@workspace/ui` and `@workspace/api-client`, and both keep: `pro
 
 Template ships `build`, `dev`, `lint`, `format`, `typecheck`. We add:
 
-| Task | Notes |
-|---|---|
-| `test` | Vitest (web/admin), Jest (backend) |
-| `test:e2e` | Playwright |
-| `openapi` | Backend emits `openapi.json`; `api-client#build` depends on it |
+| Task       | Notes                                                          |
+| ---------- | -------------------------------------------------------------- |
+| `test`     | Vitest (web/admin), Jest (backend)                             |
+| `test:e2e` | Playwright                                                     |
+| `openapi`  | Backend emits `openapi.json`; `api-client#build` depends on it |
 
 `dev` stays `cache: false, persistent: true`. `build` keeps `dependsOn: ["^build"]`.
 
