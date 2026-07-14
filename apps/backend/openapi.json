@@ -1,0 +1,1684 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/": {
+      "get": {
+        "operationId": "AppController_getHello",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Returns hello message."
+          }
+        },
+        "summary": "Get hello message",
+        "tags": [
+          "app"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "AppController_getHealth",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Service is healthy."
+          }
+        },
+        "summary": "Health check endpoint",
+        "tags": [
+          "app"
+        ]
+      }
+    },
+    "/v1/auth/register": {
+      "post": {
+        "operationId": "AuthController_register_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User successfully registered."
+          },
+          "400": {
+            "description": "Bad Request."
+          }
+        },
+        "summary": "Register a new user",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/auth/login": {
+      "post": {
+        "operationId": "AuthController_login_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Returns an access token."
+          },
+          "401": {
+            "description": "Unauthorized."
+          }
+        },
+        "summary": "Log in and get a JWT",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/auth/forgot-password": {
+      "post": {
+        "operationId": "AuthController_forgotPassword_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgotPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Always returns 200 (non-enumerating)."
+          }
+        },
+        "summary": "Request a password reset link",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/auth/reset-password": {
+      "post": {
+        "operationId": "AuthController_resetPassword_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password updated."
+          },
+          "400": {
+            "description": "Token invalid or expired."
+          }
+        },
+        "summary": "Reset a password using a valid token",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/auth/exchange": {
+      "post": {
+        "operationId": "AuthController_exchangeIdentity_v1",
+        "parameters": [
+          {
+            "name": "x-auth-exchange-secret",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExchangeAuthDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Returns a Nest access token."
+          },
+          "401": {
+            "description": "Invalid exchange secret."
+          }
+        },
+        "summary": "Exchange a trusted external identity for a Nest access token",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/auth/refresh": {
+      "post": {
+        "operationId": "AuthController_refresh_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Returns a new access and refresh token pair."
+          },
+          "401": {
+            "description": "Refresh token is invalid or expired."
+          }
+        },
+        "summary": "Rotate refresh token and issue a new token pair",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Refresh token session revoked."
+          }
+        },
+        "summary": "Revoke the current refresh token session",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/auth/sessions": {
+      "get": {
+        "operationId": "AuthController_listSessions_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Returns active refresh sessions."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List active refresh sessions for the authenticated user",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/auth/sessions/{sessionId}": {
+      "delete": {
+        "operationId": "AuthController_revokeSessionById_v1",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "required": true,
+            "in": "path",
+            "description": "Refresh session identifier",
+            "schema": {
+              "example": "8a2500f8-c56d-4e09-a281-6f7f4efced26",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Refresh session revoked."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Revoke one refresh session for the authenticated user",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/auth/providers": {
+      "get": {
+        "operationId": "AuthController_listProviders_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Returns linked provider accounts."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List linked external providers for the authenticated user",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/auth/providers/link": {
+      "post": {
+        "operationId": "AuthController_linkProvider_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExchangeAuthDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Provider linked successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Link an external provider to the authenticated user",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/auth/providers/{provider}/{providerAccountId}": {
+      "delete": {
+        "operationId": "AuthController_unlinkProvider_v1",
+        "parameters": [
+          {
+            "name": "provider",
+            "required": true,
+            "in": "path",
+            "description": "Provider name",
+            "schema": {
+              "example": "google",
+              "type": "string"
+            }
+          },
+          {
+            "name": "providerAccountId",
+            "required": true,
+            "in": "path",
+            "description": "Stable provider account identifier",
+            "schema": {
+              "example": "109876543210987654321",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Provider unlinked successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Unlink an external provider from the authenticated user",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/auth/profile": {
+      "get": {
+        "operationId": "AuthController_getProfile_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Returns user profile."
+          },
+          "401": {
+            "description": "Unauthorized."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get user profile",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/admin/staff": {
+      "post": {
+        "operationId": "StaffController_create_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateStaffDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create an internal staff member",
+        "tags": [
+          "staff"
+        ]
+      },
+      "get": {
+        "operationId": "StaffController_list_v1",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "desc",
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Case-insensitive match on username or email",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "role",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "SUPER_ADMIN",
+                "ADMIN",
+                "EDITOR",
+                "VIEWER",
+                "USER"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List internal staff (paginated, searchable, role-filterable)",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/v1/admin/staff/{id}": {
+      "get": {
+        "operationId": "StaffController_findOne_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get one staff member",
+        "tags": [
+          "staff"
+        ]
+      },
+      "delete": {
+        "operationId": "StaffController_deactivate_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Deactivate a staff member",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/v1/admin/staff/{id}/roles": {
+      "patch": {
+        "operationId": "StaffController_replaceRoles_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStaffRolesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Replace a staff member roles",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/v1/admin/audit-events": {
+      "get": {
+        "operationId": "AuditController_list_v1",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "desc",
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Inclusive lower bound on createdAt (ISO-8601 date or datetime)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Inclusive upper bound on createdAt; a date-only value covers the whole day",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "role",
+            "required": false,
+            "in": "query",
+            "description": "Filter to events by an actor who currently holds this role",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "SUPER_ADMIN",
+                "ADMIN",
+                "EDITOR",
+                "VIEWER",
+                "USER"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List audit events (paginated; filter by date range + actor role)",
+        "tags": [
+          "audit"
+        ]
+      }
+    },
+    "/v1/admin/audit-events/export.csv": {
+      "get": {
+        "operationId": "AuditController_export_v1",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "desc",
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Inclusive lower bound on createdAt (ISO-8601 date or datetime)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Inclusive upper bound on createdAt; a date-only value covers the whole day",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "role",
+            "required": false,
+            "in": "query",
+            "description": "Filter to events by an actor who currently holds this role",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "SUPER_ADMIN",
+                "ADMIN",
+                "EDITOR",
+                "VIEWER",
+                "USER"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Export filtered audit events as CSV (max 5000 rows)",
+        "tags": [
+          "audit"
+        ]
+      }
+    },
+    "/v1/admin/files/uploads": {
+      "post": {
+        "operationId": "FilesController_createUpload_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUploadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a presigned upload",
+        "tags": [
+          "files-admin"
+        ]
+      }
+    },
+    "/v1/admin/files/sweep-orphans": {
+      "post": {
+        "operationId": "FilesController_sweepOrphans_v1",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Sweep orphaned (unreferenced) file assets older than the TTL",
+        "tags": [
+          "files-admin"
+        ]
+      }
+    },
+    "/v1/admin/files/{id}/confirm": {
+      "post": {
+        "operationId": "FilesController_confirm_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Confirm an upload (verify + finalize)",
+        "tags": [
+          "files-admin"
+        ]
+      }
+    },
+    "/v1/admin/files": {
+      "get": {
+        "operationId": "FilesController_list_v1",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "desc",
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "kind",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "visibility",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "public",
+                "private"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "READY"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List file assets (paginated)",
+        "tags": [
+          "files-admin"
+        ]
+      }
+    },
+    "/v1/admin/files/{id}": {
+      "get": {
+        "operationId": "FilesController_findOne_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get a file asset with an access URL",
+        "tags": [
+          "files-admin"
+        ]
+      },
+      "delete": {
+        "operationId": "FilesController_remove_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Soft-delete a file asset",
+        "tags": [
+          "files-admin"
+        ]
+      }
+    },
+    "/v1/items": {
+      "get": {
+        "operationId": "ItemsController_list_v1",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "desc",
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Free-text match on the title",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "published",
+            "required": false,
+            "in": "query",
+            "description": "Admin list only — filter by draft/published",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of published items."
+          }
+        },
+        "summary": "List published items",
+        "tags": [
+          "items"
+        ]
+      }
+    },
+    "/v1/items/{slug}": {
+      "get": {
+        "operationId": "ItemsController_findOne_v1",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The item."
+          },
+          "404": {
+            "description": "No published item with that slug."
+          }
+        },
+        "summary": "Get one published item by slug",
+        "tags": [
+          "items"
+        ]
+      }
+    },
+    "/v1/admin/items": {
+      "get": {
+        "operationId": "AdminItemsController_list_v1",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "desc",
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Free-text match on the title",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "published",
+            "required": false,
+            "in": "query",
+            "description": "Admin list only — filter by draft/published",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List items, drafts included",
+        "tags": [
+          "admin/items"
+        ]
+      },
+      "post": {
+        "operationId": "AdminItemsController_create_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateItemDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Item created."
+          },
+          "409": {
+            "description": "An item with that slug already exists."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create an item",
+        "tags": [
+          "admin/items"
+        ]
+      }
+    },
+    "/v1/admin/items/{id}": {
+      "get": {
+        "operationId": "AdminItemsController_findOne_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get one item by id, draft or published",
+        "tags": [
+          "admin/items"
+        ]
+      },
+      "patch": {
+        "operationId": "AdminItemsController_update_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateItemDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update an item",
+        "tags": [
+          "admin/items"
+        ]
+      },
+      "delete": {
+        "operationId": "AdminItemsController_remove_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Item deleted."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Soft-delete an item",
+        "tags": [
+          "admin/items"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Groundwork API",
+    "description": "Fullstack boilerplate API — authentication, RBAC, file uploads, audit log, and transactional email.",
+    "version": "1.0.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {
+      "CreateUserDto": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "example": "John Doe",
+            "description": "Display name of the user",
+            "minLength": 2,
+            "maxLength": 60,
+            "pattern": "^[A-Za-z]+(?:[ '-][A-Za-z]+)*$"
+          },
+          "email": {
+            "type": "string",
+            "example": "user@example.com",
+            "description": "The email of the user"
+          },
+          "avatar": {
+            "type": "string",
+            "example": "https://cdn.example.com/avatars/jane.png",
+            "description": "Optional avatar URL for the user"
+          },
+          "password": {
+            "type": "string",
+            "example": "password123",
+            "description": "The password for the user",
+            "minLength": 8
+          }
+        },
+        "required": [
+          "username",
+          "email",
+          "password"
+        ]
+      },
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "user@example.com",
+            "description": "Email address of the user"
+          },
+          "password": {
+            "type": "string",
+            "example": "password123",
+            "description": "The password for the user"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "ForgotPasswordDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "user@example.com"
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "ResetPasswordDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Opaque token from the reset link"
+          },
+          "newPassword": {
+            "type": "string",
+            "example": "newPassword123",
+            "minLength": 8
+          }
+        },
+        "required": [
+          "token",
+          "newPassword"
+        ]
+      },
+      "ExchangeAuthDto": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "example": "google",
+            "description": "External identity provider name from Auth.js"
+          },
+          "providerAccountId": {
+            "type": "string",
+            "example": "109876543210987654321",
+            "description": "Stable provider account identifier"
+          },
+          "email": {
+            "type": "string",
+            "example": "user@example.com",
+            "description": "Verified email address from the identity provider"
+          },
+          "username": {
+            "type": "string",
+            "example": "Jane Tester",
+            "description": "Display name from the provider profile",
+            "minLength": 2,
+            "maxLength": 60
+          },
+          "avatar": {
+            "type": "string",
+            "example": "https://lh3.googleusercontent.com/a/avatar",
+            "description": "Optional avatar URL from the provider profile"
+          },
+          "emailVerifiedAt": {
+            "type": "string",
+            "example": "2026-04-04T08:00:00.000Z",
+            "description": "Provider verified-email timestamp in ISO format"
+          },
+          "accessToken": {
+            "type": "string",
+            "example": "ya29.a0AfH6SMA...",
+            "description": "Optional provider access token for future API calls"
+          },
+          "refreshToken": {
+            "type": "string",
+            "example": "1//0gRefreshToken",
+            "description": "Optional provider refresh token"
+          },
+          "idToken": {
+            "type": "string",
+            "example": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjEifQ...",
+            "description": "Optional provider ID token"
+          },
+          "tokenType": {
+            "type": "string",
+            "example": "Bearer",
+            "description": "Provider token type"
+          },
+          "scope": {
+            "type": "string",
+            "example": "openid email profile",
+            "description": "Granted provider scopes"
+          },
+          "expiresAt": {
+            "type": "number",
+            "example": 1743753600,
+            "description": "Access token expiry timestamp in seconds"
+          }
+        },
+        "required": [
+          "provider",
+          "providerAccountId",
+          "email",
+          "username",
+          "emailVerifiedAt"
+        ]
+      },
+      "RefreshTokenDto": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "example": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9...",
+            "description": "Previously issued refresh token"
+          }
+        },
+        "required": [
+          "refreshToken"
+        ]
+      },
+      "CreateStaffDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "staff@acme.example"
+          },
+          "username": {
+            "type": "string",
+            "example": "Jane Agent"
+          },
+          "password": {
+            "type": "string",
+            "example": "password123",
+            "minLength": 8
+          },
+          "roles": {
+            "type": "array",
+            "example": [
+              "EDITOR"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "SUPER_ADMIN",
+                "ADMIN",
+                "EDITOR",
+                "VIEWER",
+                "USER"
+              ]
+            }
+          }
+        },
+        "required": [
+          "email",
+          "username",
+          "password",
+          "roles"
+        ]
+      },
+      "UpdateStaffRolesDto": {
+        "type": "object",
+        "properties": {
+          "roles": {
+            "type": "array",
+            "example": [
+              "ADMIN"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "SUPER_ADMIN",
+                "ADMIN",
+                "EDITOR",
+                "VIEWER",
+                "USER"
+              ]
+            }
+          }
+        },
+        "required": [
+          "roles"
+        ]
+      },
+      "CreateUploadDto": {
+        "type": "object",
+        "properties": {
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "private"
+            ],
+            "example": "public"
+          },
+          "kind": {
+            "type": "string",
+            "example": "item",
+            "description": "Logical group: item|avatar|banner|document|misc",
+            "enum": [
+              "item",
+              "avatar",
+              "banner",
+              "document",
+              "misc"
+            ]
+          },
+          "filename": {
+            "type": "string",
+            "example": "galle-front.jpg"
+          },
+          "contentType": {
+            "type": "string",
+            "example": "image/jpeg"
+          }
+        },
+        "required": [
+          "visibility",
+          "kind",
+          "filename",
+          "contentType"
+        ]
+      },
+      "CreateItemDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "My first item"
+          },
+          "description": {
+            "type": "string",
+            "example": "A longer description of the item."
+          },
+          "published": {
+            "type": "boolean",
+            "default": false
+          },
+          "imageFileIds": {
+            "description": "FileAsset ids from POST /v1/admin/files/uploads",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "title"
+        ]
+      },
+      "UpdateItemDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "My first item"
+          },
+          "description": {
+            "type": "string",
+            "example": "A longer description of the item."
+          },
+          "published": {
+            "type": "boolean",
+            "default": false
+          },
+          "imageFileIds": {
+            "description": "FileAsset ids from POST /v1/admin/files/uploads",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}
