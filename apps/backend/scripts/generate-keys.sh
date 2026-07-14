@@ -1,17 +1,20 @@
 #!/usr/bin/env bash
-# Generates the RSA keypair used to sign access tokens (RS256).
+# Generates the EC P-256 keypair used to sign access tokens (ES256).
 # Keys are git-ignored and must never be committed.
+#
+# ES256 (not RS256) — the algorithm is set in src/auth/auth.module.ts. If you
+# switch to RS256 there, generate an RSA key here instead or signing will fail.
 set -euo pipefail
 
 mkdir -p keys
 
 if [ -f keys/private.pem ]; then
   echo "keys/private.pem already exists — refusing to overwrite."
-  echo "Delete it first if you really want a new keypair."
+  echo "Delete keys/ first if you really want a new keypair."
   exit 0
 fi
 
-openssl genpkey -algorithm RSA -out keys/private.pem -pkeyopt rsa_keygen_bits:2048
-openssl rsa -pubout -in keys/private.pem -out keys/public.pem
+openssl ecparam -name prime256v1 -genkey -noout -out keys/private.pem
+openssl ec -in keys/private.pem -pubout -out keys/public.pem
 
-echo "Wrote keys/private.pem and keys/public.pem"
+echo "Wrote keys/private.pem and keys/public.pem (EC P-256, for ES256)"

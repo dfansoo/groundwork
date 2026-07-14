@@ -6,6 +6,10 @@ import { ClsModule } from 'nestjs-cls';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
+import { MailModule } from './mail/mail.module';
+import { CryptoModule } from './common/crypto/crypto.module';
 import { validationSchema } from './config/env.validation';
 
 @Module({
@@ -15,6 +19,10 @@ import { validationSchema } from './config/env.validation';
     ScheduleModule.forRoot(),
     ClsModule.forRoot({ global: true, middleware: { mount: true } }),
     PrismaModule,
+    CryptoModule,
+    MailModule,
+    UsersModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
