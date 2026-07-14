@@ -50,3 +50,59 @@ test("rejects a wrong password", async ({ page }) => {
   await expect(page.getByText(/invalid email or password/i)).toBeVisible();
   await expect(page).toHaveURL(/\/login/);
 });
+
+test("change your password, get signed out, and sign back in with the new one", async ({
+  page,
+}) => {
+  const email = newEmail();
+  const oldPassword = "ProbePass123!";
+  const newPassword = "ChangedPass456!";
+
+  // A throwaway account, so this never touches the seeded admin other tests use.
+  await page.goto("/register");
+  await page.getByLabel(/^name$/i).fill("Probe User");
+  await page.getByLabel(/email/i).fill(email);
+  await page.getByLabel(/^password$/i).fill(oldPassword);
+  await page.getByRole("button", { name: /create account|sign up|register/i }).click();
+  await page.waitForURL(/\/account/);
+
+  await page.getByLabel(/current password/i).fill(oldPassword);
+  await page.getByLabel(/^new password$/i).fill(newPassword);
+  await page.getByLabel(/confirm new password/i).fill(newPassword);
+  await page.getByRole("button", { name: /change password/i }).click();
+
+  // The API revokes every session on a password change, this one included, so the
+  // form signs out rather than leaving a dead token in the cookie.
+  await page.waitForURL(/\/login/);
+
+  // The old password is genuinely gone...
+  await page.getByLabel(/email/i).fill(email);
+  await page.getByLabel(/password/i).fill(oldPassword);
+  await page.getByRole("button", { name: /sign in/i }).click();
+  await expect(page.getByText(/invalid email or password/i)).toBeVisible();
+
+  // ...and the new one genuinely works.
+  await page.getByLabel(/password/i).fill(newPassword);
+  await page.getByRole("button", { name: /sign in/i }).click();
+  await page.waitForURL(/\/account/);
+  await expect(page.getByText(email)).toBeVisible();
+});
+
+test("a wrong current password is refused", async ({ page }) => {
+  const email = newEmail();
+
+  await page.goto("/register");
+  await page.getByLabel(/^name$/i).fill("Probe User");
+  await page.getByLabel(/email/i).fill(email);
+  await page.getByLabel(/^password$/i).fill("ProbePass123!");
+  await page.getByRole("button", { name: /create account|sign up|register/i }).click();
+  await page.waitForURL(/\/account/);
+
+  await page.getByLabel(/current password/i).fill("NotMyPassword1!");
+  await page.getByLabel(/^new password$/i).fill("ChangedPass456!");
+  await page.getByLabel(/confirm new password/i).fill("ChangedPass456!");
+  await page.getByRole("button", { name: /change password/i }).click();
+
+  await expect(page.getByText(/not your current password/i)).toBeVisible();
+  await expect(page).toHaveURL(/\/account/);
+});

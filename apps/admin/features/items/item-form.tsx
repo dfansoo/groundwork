@@ -62,7 +62,11 @@ export function ItemForm({ item }: { item?: Item }) {
     <form onSubmit={form.handleSubmit(onSubmit)} className="max-w-xl space-y-5" noValidate>
       <Field>
         <FieldLabel htmlFor="title">Title</FieldLabel>
-        <Input id="title" {...form.register("title")} aria-invalid={!!form.formState.errors.title} />
+        <Input
+          id="title"
+          {...form.register("title")}
+          aria-invalid={!!form.formState.errors.title}
+        />
         <FieldError>{form.formState.errors.title?.message}</FieldError>
       </Field>
 

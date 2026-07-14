@@ -5,8 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/componen
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { bffFetch } from "@/lib/api/bff";
 import { RevokeSessionButton } from "@/components/auth/revoke-session-button";
+import { ChangePasswordForm } from "@/components/account/change-password-form";
 
-type Profile = { id: string; email: string; username: string; avatar: string | null };
+type Profile = {
+  id: string;
+  email: string;
+  username: string;
+  avatar: string | null;
+  /** False for a provider-only account, which has no password to change. */
+  hasPassword: boolean;
+};
 type AuthSession = { id: string; createdAt: string; lastUsedAt: string | null };
 
 export function AccountPanels() {
@@ -34,11 +42,11 @@ export function AccountPanels() {
           ) : (
             <>
               <p>
-                <span className="text-muted-foreground mr-2">Username</span>
+                <span className="mr-2 text-muted-foreground">Username</span>
                 {profile.data.username}
               </p>
               <p>
-                <span className="text-muted-foreground mr-2">Email</span>
+                <span className="mr-2 text-muted-foreground">Email</span>
                 {profile.data.email}
               </p>
             </>
@@ -69,6 +77,19 @@ export function AccountPanels() {
           )}
         </CardContent>
       </Card>
+
+      {/* Hidden for a provider-only account: it has no password, so the form
+          could only ever return an error explaining that. */}
+      {profile.data?.hasPassword ? (
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle>Change password</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ChangePasswordForm />
+          </CardContent>
+        </Card>
+      ) : null}
     </div>
   );
 }
