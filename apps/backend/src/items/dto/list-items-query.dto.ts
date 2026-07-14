@@ -9,7 +9,9 @@ export class ListItemsQueryDto extends PaginationQueryDto {
   @IsString()
   q?: string;
 
-  @ApiPropertyOptional({ description: 'Admin list only — filter by draft/published' })
+  @ApiPropertyOptional({
+    description: 'Admin list only — filter by draft/published',
+  })
   @IsOptional()
   @Transform(({ value }) => value === true || value === 'true')
   @IsBoolean()

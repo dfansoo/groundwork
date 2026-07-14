@@ -26,7 +26,10 @@ export class CreateItemDto {
   @IsBoolean()
   published?: boolean;
 
-  @ApiPropertyOptional({ type: [String], description: 'FileAsset ids from POST /v1/admin/files/uploads' })
+  @ApiPropertyOptional({
+    type: [String],
+    description: 'FileAsset ids from POST /v1/admin/files/uploads',
+  })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })

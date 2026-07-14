@@ -37,7 +37,11 @@ export function RegisterForm({ callbackUrl = "/account" }: { callbackUrl?: strin
     try {
       await apiFetch("auth/register", {
         method: "POST",
-        body: JSON.stringify({ username: parsed.data.name, email: parsed.data.email, password: parsed.data.password }),
+        body: JSON.stringify({
+          username: parsed.data.name,
+          email: parsed.data.email,
+          password: parsed.data.password,
+        }),
       });
     } catch (err) {
       setSubmitting(false);
@@ -49,7 +53,11 @@ export function RegisterForm({ callbackUrl = "/account" }: { callbackUrl?: strin
       }
       return;
     }
-    const res = await signIn("credentials", { email: parsed.data.email, password: parsed.data.password, redirect: false });
+    const res = await signIn("credentials", {
+      email: parsed.data.email,
+      password: parsed.data.password,
+      redirect: false,
+    });
     setSubmitting(false);
     if (res?.error) {
       toast.success("Account created — please sign in.");
@@ -63,30 +71,50 @@ export function RegisterForm({ callbackUrl = "/account" }: { callbackUrl?: strin
   return (
     <div className="space-y-5">
       <GoogleButton callbackUrl={callbackUrl} />
-      <div className="text-muted-foreground flex items-center gap-3 text-xs">
-        <span className="bg-border h-px flex-1" /> or <span className="bg-border h-px flex-1" />
+      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+        <span className="h-px flex-1 bg-border" /> or <span className="h-px flex-1 bg-border" />
       </div>
       <form onSubmit={submit} className="space-y-4" noValidate>
         <Field>
           <FieldLabel htmlFor="reg-name">Name</FieldLabel>
-          <Input id="reg-name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} aria-invalid={!!errors.name} />
+          <Input
+            id="reg-name"
+            autoComplete="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            aria-invalid={!!errors.name}
+          />
           <FieldError>{errors.name}</FieldError>
         </Field>
         <Field>
           <FieldLabel htmlFor="reg-email">Email</FieldLabel>
-          <Input id="reg-email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} aria-invalid={!!errors.email} />
+          <Input
+            id="reg-email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            aria-invalid={!!errors.email}
+          />
           <FieldError>{errors.email}</FieldError>
         </Field>
         <Field>
           <FieldLabel htmlFor="reg-password">Password</FieldLabel>
-          <Input id="reg-password" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} aria-invalid={!!errors.password} />
+          <Input
+            id="reg-password"
+            type="password"
+            autoComplete="new-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            aria-invalid={!!errors.password}
+          />
           <FieldError>{errors.password}</FieldError>
         </Field>
         <Button type="submit" size="lg" disabled={submitting} className="w-full">
           {submitting ? "Creating…" : "Create account"}
         </Button>
       </form>
-      <p className="text-muted-foreground text-center text-sm">
+      <p className="text-center text-sm text-muted-foreground">
         Already have an account?{" "}
         <Link href="/login" className="text-primary hover:underline">
           Sign in

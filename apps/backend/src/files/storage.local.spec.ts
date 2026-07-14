@@ -22,13 +22,20 @@ describe('LocalStorageDriver', () => {
   });
 
   it('presigns an upload to our own local endpoint instead of S3', async () => {
-    const { url, expiresAt } = await driver.presignPut('public/item/a.png', 'image/png');
+    const { url, expiresAt } = await driver.presignPut(
+      'public/item/a.png',
+      'image/png',
+    );
     expect(url).toBe('http://localhost:9000/v1/files/local/public/item/a.png');
     expect(expiresAt.getTime()).toBeGreaterThan(Date.now());
   });
 
   it('round-trips an object through disk, preserving content type', async () => {
-    await driver.putObject('public/item/a.png', Buffer.from('pngbytes'), 'image/png');
+    await driver.putObject(
+      'public/item/a.png',
+      Buffer.from('pngbytes'),
+      'image/png',
+    );
 
     expect(existsSync(join(root, 'public/item/a.png'))).toBe(true);
 
@@ -49,7 +56,9 @@ describe('LocalStorageDriver', () => {
   });
 
   it('does not throw when deleting a key that is already gone', async () => {
-    await expect(driver.deleteObject('nope/nothing.png')).resolves.toBeUndefined();
+    await expect(
+      driver.deleteObject('nope/nothing.png'),
+    ).resolves.toBeUndefined();
   });
 
   it('serves public and private URLs from the local endpoint', () => {

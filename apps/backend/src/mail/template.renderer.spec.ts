@@ -14,9 +14,13 @@ describe('TemplateRenderer', () => {
     });
 
     expect(out.subject).toMatch(/reset/i);
-    expect(out.html).toContain('https://web.test/reset-password?token=RAWTOKEN');
+    expect(out.html).toContain(
+      'https://web.test/reset-password?token=RAWTOKEN',
+    );
     expect(out.html).toContain('Jan');
-    expect(out.text).toContain('https://web.test/reset-password?token=RAWTOKEN');
+    expect(out.text).toContain(
+      'https://web.test/reset-password?token=RAWTOKEN',
+    );
     expect(out.text).toContain('30');
   });
 

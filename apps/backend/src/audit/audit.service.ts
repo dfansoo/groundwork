@@ -1,6 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { AuditLog, Prisma } from '@prisma/client';
-import { ActorWithRoles, AuditInput, AuditRepository } from './audit.repository';
+import {
+  ActorWithRoles,
+  AuditInput,
+  AuditRepository,
+} from './audit.repository';
 import { Role } from '../types/role.enum';
 import {
   PaginatedResult,
@@ -43,7 +47,9 @@ export class AuditService {
     await this.repo.create(input);
   }
 
-  async list(query: ListAuditEventsQueryDto): Promise<PaginatedResult<AuditEventView>> {
+  async list(
+    query: ListAuditEventsQueryDto,
+  ): Promise<PaginatedResult<AuditEventView>> {
     const { skip, take, page, limit } = getPaginationParams(query);
     const where = await this.buildWhere(query);
     const [rows, total] = await Promise.all([
@@ -61,16 +67,30 @@ export class AuditService {
 
   async exportCsv(query: ListAuditEventsQueryDto): Promise<string> {
     const where = await this.buildWhere(query);
-    const fetched = await this.repo.findMany(where, 0, AuditService.EXPORT_CAP + 1);
+    const fetched = await this.repo.findMany(
+      where,
+      0,
+      AuditService.EXPORT_CAP + 1,
+    );
     const truncated = fetched.length > AuditService.EXPORT_CAP;
-    const rows = truncated ? fetched.slice(0, AuditService.EXPORT_CAP) : fetched;
+    const rows = truncated
+      ? fetched.slice(0, AuditService.EXPORT_CAP)
+      : fetched;
     if (truncated) {
       this.logger.warn(
         `Audit CSV export exceeded the ${AuditService.EXPORT_CAP}-row cap; output truncated to ${AuditService.EXPORT_CAP} rows`,
       );
     }
     const actors = await this.resolveActors(rows);
-    const header = ['Timestamp', 'User', 'Email', 'Roles', 'Action', 'Entity', 'Entity ID'];
+    const header = [
+      'Timestamp',
+      'User',
+      'Email',
+      'Roles',
+      'Action',
+      'Entity',
+      'Entity ID',
+    ];
     const lines = [header.map(csvCell).join(',')];
     for (const row of rows) {
       const actor = row.actorId ? (actors.get(row.actorId) ?? null) : null;
@@ -92,13 +112,17 @@ export class AuditService {
     return lines.join('\r\n');
   }
 
-  private async buildWhere(query: ListAuditEventsQueryDto): Promise<Prisma.AuditLogWhereInput> {
+  private async buildWhere(
+    query: ListAuditEventsQueryDto,
+  ): Promise<Prisma.AuditLogWhereInput> {
     const where: Prisma.AuditLogWhereInput = {};
     const createdAt: { gte?: Date; lte?: Date } = {};
     if (query.from) createdAt.gte = new Date(query.from);
     if (query.to) {
       createdAt.lte =
-        query.to.length === 10 ? new Date(`${query.to}T23:59:59.999Z`) : new Date(query.to);
+        query.to.length === 10
+          ? new Date(`${query.to}T23:59:59.999Z`)
+          : new Date(query.to);
     }
     if (createdAt.gte || createdAt.lte) where.createdAt = createdAt;
     if (query.role) {
@@ -107,8 +131,14 @@ export class AuditService {
     return where;
   }
 
-  private async resolveActors(rows: AuditLog[]): Promise<Map<string, AuditActorView>> {
-    const ids = [...new Set(rows.map((r) => r.actorId).filter((x): x is string => Boolean(x)))];
+  private async resolveActors(
+    rows: AuditLog[],
+  ): Promise<Map<string, AuditActorView>> {
+    const ids = [
+      ...new Set(
+        rows.map((r) => r.actorId).filter((x): x is string => Boolean(x)),
+      ),
+    ];
     const users = await this.repo.findActorsByIds(ids);
     return new Map(users.map((u) => [u.id, this.toActorView(u)] as const));
   }
@@ -122,7 +152,10 @@ export class AuditService {
     };
   }
 
-  private toView(row: AuditLog, actors: Map<string, AuditActorView>): AuditEventView {
+  private toView(
+    row: AuditLog,
+    actors: Map<string, AuditActorView>,
+  ): AuditEventView {
     return {
       id: row.id,
       action: row.action,

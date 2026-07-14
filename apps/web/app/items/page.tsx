@@ -11,7 +11,7 @@ export default async function ItemsPage() {
 
   return (
     <Container className="py-16">
-      <h1 className="font-heading mb-8 text-3xl font-semibold tracking-tight">Items</h1>
+      <h1 className="mb-8 font-heading text-3xl font-semibold tracking-tight">Items</h1>
 
       {items.length === 0 ? (
         <p className="text-muted-foreground">Nothing published yet.</p>
@@ -25,9 +25,7 @@ export default async function ItemsPage() {
                 </CardHeader>
                 {item.description ? (
                   <CardContent>
-                    <p className="text-muted-foreground line-clamp-3 text-sm">
-                      {item.description}
-                    </p>
+                    <p className="line-clamp-3 text-sm text-muted-foreground">{item.description}</p>
                   </CardContent>
                 ) : null}
               </Card>

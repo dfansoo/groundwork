@@ -29,7 +29,11 @@ export class AuditRepository {
     });
   }
 
-  findMany(where: Prisma.AuditLogWhereInput, skip: number, take: number): Promise<AuditLog[]> {
+  findMany(
+    where: Prisma.AuditLogWhereInput,
+    skip: number,
+    take: number,
+  ): Promise<AuditLog[]> {
     return this.prisma.auditLog.findMany({
       where,
       orderBy: { createdAt: 'desc' },

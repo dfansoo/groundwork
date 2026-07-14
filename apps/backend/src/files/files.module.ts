@@ -17,7 +17,12 @@ const isLocalStorage = (process.env.FILES_DRIVER ?? 'local') !== 's3';
   controllers: isLocalStorage
     ? [FilesController, FilesLocalController]
     : [FilesController],
-  providers: [FilesService, FilesCleanupService, FilesRepository, StorageService],
+  providers: [
+    FilesService,
+    FilesCleanupService,
+    FilesRepository,
+    StorageService,
+  ],
   exports: [FilesService, StorageService],
 })
 export class FilesModule {}

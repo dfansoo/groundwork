@@ -31,11 +31,11 @@ export default async function ItemPage({ params }: { params: Promise<{ slug: str
 
   return (
     <Container className="max-w-3xl py-16">
-      <h1 className="font-heading mb-6 text-4xl font-semibold tracking-tight text-balance">
+      <h1 className="mb-6 font-heading text-4xl font-semibold tracking-tight text-balance">
         {item.title}
       </h1>
       {item.description ? (
-        <p className="text-muted-foreground text-lg leading-relaxed text-pretty">
+        <p className="text-lg leading-relaxed text-pretty text-muted-foreground">
           {item.description}
         </p>
       ) : null}

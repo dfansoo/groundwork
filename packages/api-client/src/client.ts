@@ -1,6 +1,6 @@
-import createClient, { type Middleware } from 'openapi-fetch';
-import type { paths } from './schema';
-import { toApiError } from './errors';
+import createClient, { type Middleware } from "openapi-fetch";
+import type { paths } from "./schema";
+import { toApiError } from "./errors";
 
 export interface ApiClientOptions {
   /** e.g. http://localhost:9000 — no trailing slash, no /v1 (that is in the paths). */
@@ -25,7 +25,7 @@ export function createApiClient({ baseUrl, getToken }: ApiClientOptions) {
   const auth: Middleware = {
     async onRequest({ request }) {
       const token = await getToken?.();
-      if (token) request.headers.set('Authorization', `Bearer ${token}`);
+      if (token) request.headers.set("Authorization", `Bearer ${token}`);
       return request;
     },
     async onResponse({ response }) {

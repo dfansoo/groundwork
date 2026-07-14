@@ -69,7 +69,8 @@ async function main() {
     create: {
       title: 'Work In Progress',
       slug: 'work-in-progress',
-      description: 'A draft. Visible in the admin console, hidden from the public site.',
+      description:
+        'A draft. Visible in the admin console, hidden from the public site.',
       published: false,
     },
   });

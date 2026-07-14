@@ -43,7 +43,7 @@ export function LoginForm({ callbackUrl = "/" }: { callbackUrl?: string }) {
   return (
     <form onSubmit={submit} className="space-y-4" noValidate>
       {errors.form ? (
-        <p className="text-destructive text-sm" role="alert">
+        <p className="text-sm text-destructive" role="alert">
           {errors.form}
         </p>
       ) : null}

@@ -32,7 +32,10 @@ export function ResetPasswordForm({ token }: { token: string }) {
     setErrors({});
     setSubmitting(true);
     try {
-      await apiFetch("auth/reset-password", { method: "POST", body: JSON.stringify({ token, newPassword: parsed.data.password }) });
+      await apiFetch("auth/reset-password", {
+        method: "POST",
+        body: JSON.stringify({ token, newPassword: parsed.data.password }),
+      });
     } catch (err) {
       setSubmitting(false);
       const status = err instanceof ApiError ? err.status : 0;
@@ -53,7 +56,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
   return (
     <form onSubmit={submit} className="space-y-4" noValidate>
       {errors.form && (
-        <p className="text-destructive text-sm" role="alert">
+        <p className="text-sm text-destructive" role="alert">
           {errors.form}{" "}
           <Link href="/forgot-password" className="underline">
             Start over
@@ -62,12 +65,26 @@ export function ResetPasswordForm({ token }: { token: string }) {
       )}
       <Field>
         <FieldLabel htmlFor="reset-password">New password</FieldLabel>
-        <Input id="reset-password" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} aria-invalid={!!errors.password} />
+        <Input
+          id="reset-password"
+          type="password"
+          autoComplete="new-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          aria-invalid={!!errors.password}
+        />
         <FieldError>{errors.password}</FieldError>
       </Field>
       <Field>
         <FieldLabel htmlFor="reset-confirm">Confirm password</FieldLabel>
-        <Input id="reset-confirm" type="password" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} aria-invalid={!!errors.confirm} />
+        <Input
+          id="reset-confirm"
+          type="password"
+          autoComplete="new-password"
+          value={confirm}
+          onChange={(e) => setConfirm(e.target.value)}
+          aria-invalid={!!errors.confirm}
+        />
         <FieldError>{errors.confirm}</FieldError>
       </Field>
       <Button type="submit" size="lg" disabled={submitting} className="w-full">

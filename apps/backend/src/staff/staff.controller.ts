@@ -40,7 +40,9 @@ export class StaffController {
 
   @Get()
   @RequirePermissions(Permission.STAFF_READ)
-  @ApiOperation({ summary: 'List internal staff (paginated, searchable, role-filterable)' })
+  @ApiOperation({
+    summary: 'List internal staff (paginated, searchable, role-filterable)',
+  })
   list(@Query() query: ListStaffQueryDto) {
     return this.staffService.list(query);
   }

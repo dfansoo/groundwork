@@ -46,7 +46,12 @@ function jwtExpiryMs(token: string): number {
 
 function normalize(r: AuthResponse): BackendTokens {
   return {
-    user: { id: r.user.id, name: r.user.username, email: r.user.email, avatar: r.user.avatar ?? null },
+    user: {
+      id: r.user.id,
+      name: r.user.username,
+      email: r.user.email,
+      avatar: r.user.avatar ?? null,
+    },
     accessToken: r.access_token,
     refreshToken: r.refresh_token,
     accessTokenExpiresAt: jwtExpiryMs(r.access_token),
@@ -85,7 +90,10 @@ function googleUsername(profile: GoogleProfileLike): string {
   return safe.slice(0, 60);
 }
 
-export function exchangeGoogle(profile: GoogleProfileLike, account: GoogleAccountLike): Promise<BackendTokens | null> {
+export function exchangeGoogle(
+  profile: GoogleProfileLike,
+  account: GoogleAccountLike,
+): Promise<BackendTokens | null> {
   if (!profile.email_verified || !profile.email) return Promise.resolve(null);
   return postAuth(
     "auth/exchange",

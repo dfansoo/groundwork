@@ -1,72 +1,65 @@
-FROM node:20-alpine AS base
+# The build context is the REPO ROOT, not this directory:
+#
+#   docker build -f apps/web/Dockerfile -t groundwork-web .
+#
+# A Bun workspace only resolves from the root, so the image installs from there.
 
-# Install dependencies only when needed
+FROM oven/bun:1.3.9-alpine AS base
+WORKDIR /repo
+
+# ---------------------------------------------------------------------------
+# deps — manifests only, so this layer survives every source-only change.
+# ---------------------------------------------------------------------------
 FROM base AS deps
-# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-RUN apk add --no-cache libc6-compat
-WORKDIR /app
+# The backend's postinstall runs `prisma generate` even when we are only building
+# a frontend, because a workspace install runs every workspace's hooks. It needs
+# the schema and a resolvable URL; it never connects, and neither reaches the
+# final image.
+ENV DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder"
 
-# Install dependencies based on the preferred package manager
-COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* bun.lock ./
-RUN \
-    if [ -f bun.lock ]; then npm install -g bun && bun install --frozen-lockfile; \
-    elif [ -f yarn.lock ]; then yarn --frozen-lockfile; \
-    elif [ -f package-lock.json ]; then npm ci; \
-    elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm i --frozen-lockfile; \
-    else echo "Lockfile not found." && exit 1; \
-    fi
+COPY package.json bun.lock ./
+COPY apps/backend/package.json               apps/backend/
+COPY apps/web/package.json                   apps/web/
+COPY apps/admin/package.json                 apps/admin/
+COPY packages/ui/package.json                packages/ui/
+COPY packages/api-client/package.json        packages/api-client/
+COPY packages/eslint-config/package.json     packages/eslint-config/
+COPY packages/typescript-config/package.json packages/typescript-config/
+COPY apps/backend/prisma           apps/backend/prisma
+COPY apps/backend/prisma.config.ts apps/backend/
 
+RUN bun install --frozen-lockfile
 
-# Rebuild the source code only when needed
+# ---------------------------------------------------------------------------
+# builder
+# ---------------------------------------------------------------------------
 FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /repo /repo
 COPY . .
 
-# Next.js collects completely anonymous telemetry data about general usage.
-# Learn more here: https://nextjs.org/telemetry
-# Uncomment the following line in case you want to disable telemetry during the build.
-# ENV NEXT_TELEMETRY_DISABLED=1
+# The typed client is generated from the committed openapi.json, so the frontend
+# image never has to build the backend to get its types.
+RUN cd packages/api-client && bun run generate
+RUN cd apps/web && bun run build
 
-# API_URL is validated at runtime, not build. next/font fetches Google Fonts at
-# build time, so the build stage needs network access.
-RUN \
-    if [ -f bun.lock ]; then npm install -g bun && bun run build; \
-    elif [ -f yarn.lock ]; then yarn run build; \
-    elif [ -f package-lock.json ]; then npm run build; \
-    elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build; \
-    else echo "Lockfile not found." && exit 1; \
-    fi
-
-# Production image, copy all the files and run next
-FROM base AS runner
-WORKDIR /app
+# ---------------------------------------------------------------------------
+# runner — Node, not Bun: `next build --output standalone` emits a plain server.
+# ---------------------------------------------------------------------------
+FROM node:22-alpine AS runner
+WORKDIR /repo
 
 ENV NODE_ENV=production
-# Uncomment the following line in case you want to disable telemetry during runtime.
-# ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+RUN addgroup -S -g 1001 nodejs && adduser -S -u 1001 -G nodejs nextjs
 
-COPY --from=builder /app/public ./public
-
-# Set the correct permission for prerender cache
-RUN mkdir .next
-RUN chown nextjs:nodejs .next
-
-# Automatically leverage output traces to reduce image size
-# https://nextjs.org/docs/advanced-features/output-file-tracing
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# outputFileTracingRoot is the repo root, so the standalone tree is laid out as
+# apps/web/server.js + node_modules + the traced workspace packages.
+COPY --from=builder --chown=nextjs:nodejs /repo/apps/web/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /repo/apps/web/.next/static     ./apps/web/.next/static
 
 USER nextjs
-
 EXPOSE 3000
 
-# server.js is created by next build from the standalone output
-# https://nextjs.org/docs/pages/api-reference/next-config-js/output
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
-
-CMD ["node", "server.js"]
+CMD ["node", "apps/web/server.js"]

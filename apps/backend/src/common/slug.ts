@@ -54,7 +54,11 @@ function isSlugConflict(err: unknown): boolean {
   ];
 
   return candidates.some((c) => {
-    const text = Array.isArray(c) ? c.join(',') : typeof c === 'string' ? c : '';
+    const text = Array.isArray(c)
+      ? c.join(',')
+      : typeof c === 'string'
+        ? c
+        : '';
     return text.includes('slug');
   });
 }
@@ -64,7 +68,12 @@ function slugTaken(slug: string): UnprocessableEntityException {
     statusCode: 422,
     error: 'Unprocessable Entity',
     message: 'Validation failed',
-    details: [{ property: 'slug', constraints: { slug: `Slug "${slug}" is already in use` } }],
+    details: [
+      {
+        property: 'slug',
+        constraints: { slug: `Slug "${slug}" is already in use` },
+      },
+    ],
   });
 }
 
@@ -105,7 +114,10 @@ export async function resolveSlug<T>(
   throw slugTaken(root);
 }
 
-export async function withSlugConflict<T>(slug: string, op: () => Promise<T>): Promise<T> {
+export async function withSlugConflict<T>(
+  slug: string,
+  op: () => Promise<T>,
+): Promise<T> {
   try {
     return await op();
   } catch (err) {

@@ -33,7 +33,7 @@ export function AccountMenu({ user }: { user: SessionUser | null }) {
     return (
       <Link
         href="/login"
-        className="text-muted-foreground hover:text-foreground text-sm font-medium transition-colors"
+        className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
       >
         Sign in
       </Link>
@@ -44,7 +44,7 @@ export function AccountMenu({ user }: { user: SessionUser | null }) {
     <DropdownMenu>
       <DropdownMenuTrigger
         aria-label="Account menu"
-        className="focus-visible:ring-ring rounded-full outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+        className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       >
         <Avatar className="size-9">
           {user.avatar ? <AvatarImage src={user.avatar} alt="" /> : null}
@@ -54,11 +54,11 @@ export function AccountMenu({ user }: { user: SessionUser | null }) {
 
       <DropdownMenuContent align="end" className="min-w-52">
         <div className="px-2 py-2">
-          <span className="text-foreground block text-sm font-medium">
+          <span className="block text-sm font-medium text-foreground">
             {user.name ?? "Signed in"}
           </span>
           {user.email ? (
-            <span className="text-muted-foreground block truncate text-xs">{user.email}</span>
+            <span className="block truncate text-xs text-muted-foreground">{user.email}</span>
           ) : null}
         </div>
 

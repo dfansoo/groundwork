@@ -31,12 +31,19 @@ describe('validationSchema', () => {
   });
 
   it('requires AWS + CloudFront config when FILES_DRIVER=s3', () => {
-    const { error } = validationSchema.validate({ ...base, FILES_DRIVER: 's3' });
+    const { error } = validationSchema.validate({
+      ...base,
+      FILES_DRIVER: 's3',
+    });
     expect(error).toBeDefined();
   });
 
   it('accepts FILES_DRIVER=s3 when the cloud config is present', () => {
-    const { error } = validationSchema.validate({ ...base, FILES_DRIVER: 's3', ...s3Config });
+    const { error } = validationSchema.validate({
+      ...base,
+      FILES_DRIVER: 's3',
+      ...s3Config,
+    });
     expect(error).toBeUndefined();
   });
 
@@ -47,12 +54,59 @@ describe('validationSchema', () => {
   });
 
   it('requires BREVO_API_KEY when MAIL_TRANSPORT=brevo', () => {
-    const { error } = validationSchema.validate({ ...base, MAIL_TRANSPORT: 'brevo' });
+    const { error } = validationSchema.validate({
+      ...base,
+      MAIL_TRANSPORT: 'brevo',
+    });
     expect(error).toBeDefined();
   });
 
   it('defaults ALLOWED_ORIGINS to the two local frontends', () => {
     const { value } = validationSchema.validate(base);
-    expect(value.ALLOWED_ORIGINS).toBe('http://localhost:3000,http://localhost:3001');
+    expect(value.ALLOWED_ORIGINS).toBe(
+      'http://localhost:3000,http://localhost:3001',
+    );
+  });
+
+  describe('AUTH_EXCHANGE_SECRET', () => {
+    // The default is committed to this repository, so it is public in every
+    // clone. Booting production with it means anyone can mint a session for any
+    // email through /v1/auth/exchange.
+    it('falls back to the shared development default outside production', () => {
+      const { error, value } = validationSchema.validate(base);
+      expect(error).toBeUndefined();
+      expect(value.AUTH_EXCHANGE_SECRET).toBe(
+        'local-auth-exchange-secret-please-change',
+      );
+    });
+
+    it('refuses to boot in production when it is unset', () => {
+      const { error } = validationSchema.validate({
+        ...base,
+        NODE_ENV: 'production',
+      });
+      expect(error?.message).toMatch(
+        /AUTH_EXCHANGE_SECRET must be set in production/,
+      );
+    });
+
+    it('rejects a short secret in production', () => {
+      const { error } = validationSchema.validate({
+        ...base,
+        NODE_ENV: 'production',
+        AUTH_EXCHANGE_SECRET: 'too-short',
+      });
+      expect(error?.message).toMatch(/at least 32 characters/);
+    });
+
+    it('accepts a generated secret in production', () => {
+      const { error, value } = validationSchema.validate({
+        ...base,
+        NODE_ENV: 'production',
+        AUTH_EXCHANGE_SECRET: 'x'.repeat(44),
+      });
+      expect(error).toBeUndefined();
+      expect(value.AUTH_EXCHANGE_SECRET).toBe('x'.repeat(44));
+    });
   });
 });

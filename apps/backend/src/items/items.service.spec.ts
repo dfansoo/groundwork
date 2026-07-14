@@ -1,5 +1,6 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { ConflictException, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { ItemsService } from './items.service';
 
 describe('ItemsService', () => {
@@ -36,7 +37,10 @@ describe('ItemsService', () => {
 
   describe('create', () => {
     it('derives the slug from the title', async () => {
-      const created = await svc.create({ title: 'Hello World' } as any, 'user-1');
+      const created = await svc.create(
+        { title: 'Hello World' } as any,
+        'user-1',
+      );
 
       expect(repo.create).toHaveBeenCalledWith(
         expect.objectContaining({ slug: 'hello-world', title: 'Hello World' }),
@@ -56,6 +60,31 @@ describe('ItemsService', () => {
       });
     });
 
+    // The lookup and the insert are two statements: two requests with the same
+    // title can both pass the check and race. Losing that race must be a 409, not
+    // a 500 with a Prisma stack trace attached.
+    it('turns a lost insert race into a conflict, not a crash', async () => {
+      repo.create.mockRejectedValue(
+        new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+          code: 'P2002',
+          clientVersion: 'test',
+          meta: { target: ['slug'] },
+        }),
+      );
+
+      await expect(
+        svc.create({ title: 'Hello World' } as any, 'user-1'),
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it('does not swallow an unrelated database error', async () => {
+      repo.create.mockRejectedValue(new Error('connection reset'));
+
+      await expect(
+        svc.create({ title: 'Hello World' } as any, 'user-1'),
+      ).rejects.toThrow('connection reset');
+    });
+
     it('rejects a duplicate slug', async () => {
       repo.findBySlug.mockResolvedValue(item());
 
@@ -68,9 +97,9 @@ describe('ItemsService', () => {
 
   describe('update', () => {
     it('404s on an unknown id', async () => {
-      await expect(svc.update('nope', { title: 'x' } as any, 'user-1')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        svc.update('nope', { title: 'x' } as any, 'user-1'),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('re-slugs when the title changes and audits the update', async () => {
@@ -83,7 +112,11 @@ describe('ItemsService', () => {
         expect.objectContaining({ slug: 'brave-new-world' }),
       );
       expect(audit.record).toHaveBeenCalledWith(
-        expect.objectContaining({ action: 'items.update', entityId: 'i1', actorId: 'user-1' }),
+        expect.objectContaining({
+          action: 'items.update',
+          entityId: 'i1',
+          actorId: 'user-1',
+        }),
       );
     });
 
@@ -102,14 +135,30 @@ describe('ItemsService', () => {
 
       await svc.remove('i1', 'user-1');
 
-      expect(repo.softDelete).toHaveBeenCalledWith('i1');
+      expect(repo.softDelete).toHaveBeenCalledWith('i1', expect.any(String));
       expect(audit.record).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'items.delete', entityId: 'i1' }),
       );
     });
 
+    // The unique index on slug covers deleted rows too, while the collision check
+    // does not look at them. Leaving the slug in place means the title can never
+    // be used again — and the failure lands on the database as a 500, not a 409.
+    it('retires the slug so the title can be used again', async () => {
+      repo.findById.mockResolvedValue(item({ slug: 'hello-world' }));
+
+      await svc.remove('i1', 'user-1');
+
+      const [, freedSlug] = repo.softDelete.mock.calls[0];
+      expect(freedSlug).not.toBe('hello-world');
+      expect(freedSlug).toContain('hello-world');
+      expect(freedSlug).toContain('i1');
+    });
+
     it('404s on an unknown id', async () => {
-      await expect(svc.remove('nope', 'user-1')).rejects.toThrow(NotFoundException);
+      await expect(svc.remove('nope', 'user-1')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -117,13 +166,17 @@ describe('ItemsService', () => {
     it('findPublishedBySlug 404s on a draft', async () => {
       repo.findBySlug.mockResolvedValue(item({ published: false }));
 
-      await expect(svc.findPublishedBySlug('hello-world')).rejects.toThrow(NotFoundException);
+      await expect(svc.findPublishedBySlug('hello-world')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('findPublishedBySlug returns a published item', async () => {
       repo.findBySlug.mockResolvedValue(item({ published: true }));
 
-      await expect(svc.findPublishedBySlug('hello-world')).resolves.toMatchObject({
+      await expect(
+        svc.findPublishedBySlug('hello-world'),
+      ).resolves.toMatchObject({
         slug: 'hello-world',
       });
     });

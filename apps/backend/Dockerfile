@@ -1,114 +1,101 @@
-FROM node:22-alpine AS deps
-WORKDIR /app
+# The build context is the REPO ROOT, not this directory:
+#
+#   docker build -f apps/backend/Dockerfile -t groundwork-backend .
+#
+# A Bun workspace only resolves from the root, so the image has to install from
+# there. Everything below keeps the repo's own layout (/repo/apps/backend), which
+# is what keeps the workspace symlinks in node_modules valid at runtime.
 
-# Install Bun
-RUN npm install -g bun
-
-# Copy package files
-COPY package.json bun.lock ./
-
-# Copy Prisma files for client generation
-COPY prisma ./prisma
-COPY prisma.config.ts ./
-
-# Set dummy DATABASE_URL for Prisma client generation
-ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
-
-# Install ALL dependencies (including dev) for build stage
-RUN bun install --frozen-lockfile
-
-# Generate Prisma client after installation
-RUN bunx prisma generate
-
-# Production dependencies stage - install only production dependencies
-FROM node:22-alpine AS prod-deps
-WORKDIR /app
-
-# Install Bun
-RUN npm install -g bun
-
-# Copy package files
-COPY package.json bun.lock ./
-
-# Copy Prisma files for client generation
-COPY prisma ./prisma
-COPY prisma.config.ts ./
-
-# Set dummy DATABASE_URL for Prisma client generation
-ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
-
-# Install ONLY production dependencies
-RUN bun install --frozen-lockfile --production
-
-# Generate Prisma client for production
-RUN bunx prisma generate
-
-FROM node:22-alpine AS builder
-WORKDIR /app
-
-# Install Bun
-RUN npm install -g bun
-
-# Install OpenSSL for Prisma
+FROM oven/bun:1.3.9-alpine AS base
+WORKDIR /repo
+# Prisma's query engine is linked against OpenSSL.
 RUN apk add --no-cache openssl
 
-# Copy dependencies from deps stage (includes generated Prisma client)
-COPY --from=deps /app/node_modules ./node_modules
+# ---------------------------------------------------------------------------
+# deps — manifests only, so this layer survives every source-only change.
+# ---------------------------------------------------------------------------
+FROM base AS deps
+# Prisma resolves the datasource URL when it generates. It never connects, so a
+# placeholder is enough — and it stays in this stage, out of the final image.
+ENV DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder"
 
-# Copy source code, Prisma schema, and config
+COPY package.json bun.lock ./
+COPY apps/backend/package.json               apps/backend/
+COPY apps/web/package.json                   apps/web/
+COPY apps/admin/package.json                 apps/admin/
+COPY packages/ui/package.json                packages/ui/
+COPY packages/api-client/package.json        packages/api-client/
+COPY packages/eslint-config/package.json     packages/eslint-config/
+COPY packages/typescript-config/package.json packages/typescript-config/
+# The backend's postinstall runs `prisma generate`, which needs the schema.
+COPY apps/backend/prisma           apps/backend/prisma
+COPY apps/backend/prisma.config.ts apps/backend/
+
+RUN bun install --frozen-lockfile
+
+# ---------------------------------------------------------------------------
+# prod-deps — what the runner actually ships.
+#
+# --filter backend matters: a plain root install resolves every workspace, so the
+# API image would carry Next.js, React and the whole frontend tree. That is the
+# difference between a ~250MB image and a 1.8GB one.
+# ---------------------------------------------------------------------------
+FROM base AS prod-deps
+ENV DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder"
+
+COPY package.json bun.lock ./
+COPY apps/backend/package.json               apps/backend/
+COPY apps/web/package.json                   apps/web/
+COPY apps/admin/package.json                 apps/admin/
+COPY packages/ui/package.json                packages/ui/
+COPY packages/api-client/package.json        packages/api-client/
+COPY packages/eslint-config/package.json     packages/eslint-config/
+COPY packages/typescript-config/package.json packages/typescript-config/
+COPY apps/backend/prisma           apps/backend/prisma
+COPY apps/backend/prisma.config.ts apps/backend/
+
+RUN bun install --frozen-lockfile --production --filter backend
+
+# ---------------------------------------------------------------------------
+# builder
+# ---------------------------------------------------------------------------
+FROM base AS builder
+COPY --from=deps /repo /repo
 COPY . .
+RUN cd apps/backend && bun run build
 
-# Generate JWT keys
-RUN mkdir -p keys && \
-  openssl ecparam -name prime256v1 -genkey -noout -out keys/private.pem && \
-  openssl ec -in keys/private.pem -pubout -out keys/public.pem && \
-  chmod 600 keys/private.pem && \
-  chmod 644 keys/public.pem
-
-# Build the application
-# Cache buster: Bun package manager migration - 2026-01-31
-RUN bun run build
-
-# Verify dist folder was created
-RUN ls -la dist/ && echo "Build successful - dist/src contains:" && ls -la dist/src/ | head -20
-
+# ---------------------------------------------------------------------------
+# runner — Node, not Bun: nothing here needs a bundler.
+# ---------------------------------------------------------------------------
 FROM node:22-alpine AS runner
-WORKDIR /app
-
-# Install only runtime dependencies (no Bun needed in production)
+WORKDIR /repo
 RUN apk add --no-cache openssl dumb-init
 
-# Create non-root user
-RUN addgroup --system --gid 1001 nodejs && \
-  adduser --system --uid 1001 nodejs
-
-# Set environment
 ENV NODE_ENV=production
 
-# Copy built application
-COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
-# Copy ONLY production node_modules (smaller)
-COPY --from=prod-deps --chown=nodejs:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nodejs:nodejs /app/package.json ./package.json
-COPY --from=builder --chown=nodejs:nodejs /app/prisma ./prisma
-COPY --from=builder --chown=nodejs:nodejs /app/prisma.config.ts ./prisma.config.ts
+COPY --from=prod-deps --chown=node:node /repo/node_modules              ./node_modules
+COPY --from=prod-deps --chown=node:node /repo/apps/backend/node_modules ./apps/backend/node_modules
+COPY --from=prod-deps --chown=node:node /repo/package.json              ./package.json
 
-# Copy JWT keys generated in builder stage
-COPY --from=builder --chown=nodejs:nodejs /app/keys ./keys
+COPY --from=builder --chown=node:node /repo/apps/backend/dist             ./apps/backend/dist
+COPY --from=builder --chown=node:node /repo/apps/backend/prisma           ./apps/backend/prisma
+COPY --from=builder --chown=node:node /repo/apps/backend/prisma.config.ts ./apps/backend/prisma.config.ts
+COPY --from=builder --chown=node:node /repo/apps/backend/package.json     ./apps/backend/package.json
+COPY --from=builder --chown=node:node /repo/apps/backend/entrypoint.sh    ./apps/backend/entrypoint.sh
+RUN chmod +x ./apps/backend/entrypoint.sh
 
-# Copy entrypoint script
-COPY --chown=nodejs:nodejs entrypoint.sh ./entrypoint.sh
-RUN chmod +x ./entrypoint.sh
-
-# Switch to non-root user
-USER nodejs
-
-# Expose port
+# Signing keys are deliberately NOT baked in. A key inside an image layer is a
+# key every puller of that image holds, and a rebuild would invalidate every
+# live token. Mount them (see docker-compose.yml) or point the *_KEY_PATH vars
+# at a secrets mount.
+WORKDIR /repo/apps/backend
+# Prisma shells out to `tsx` to run the seed, and resolves it from PATH — which
+# does not include node_modules/.bin unless we say so.
+ENV PATH="/repo/apps/backend/node_modules/.bin:/repo/node_modules/.bin:${PATH}"
+USER node
 EXPOSE 9000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:9000/health || exit 1
 
-# Use entrypoint for migrations, seeding, and app startup
-ENTRYPOINT ["./entrypoint.sh"]
+ENTRYPOINT ["dumb-init", "--", "./entrypoint.sh"]

@@ -318,6 +318,18 @@ export class UsersService {
     return this.usersRepository.revokeAuthSession(sessionId);
   }
 
+  async recordFailedLogin(
+    userId: string,
+    threshold: number,
+    lockMs: number,
+  ): Promise<void> {
+    return this.usersRepository.recordFailedLogin(userId, threshold, lockMs);
+  }
+
+  async clearFailedLogins(userId: string): Promise<void> {
+    return this.usersRepository.clearFailedLogins(userId);
+  }
+
   private normalizeEmail(email: string): string {
     return email.trim().toLowerCase();
   }

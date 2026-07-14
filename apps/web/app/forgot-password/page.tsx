@@ -10,7 +10,9 @@ export default function ForgotPasswordPage() {
       <main>
         <Container className="flex min-h-[70vh] items-center justify-center py-16">
           <div className="w-full max-w-sm">
-            <h1 className="font-serif text-primary mb-6 text-center text-3xl font-semibold">Reset your password</h1>
+            <h1 className="mb-6 text-center font-serif text-3xl font-semibold text-primary">
+              Reset your password
+            </h1>
             <ForgotPasswordForm />
           </div>
         </Container>

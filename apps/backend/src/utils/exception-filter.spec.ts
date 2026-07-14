@@ -61,7 +61,12 @@ describe('CustomExceptionFilter', () => {
 
     filter.catch(
       new HttpException(
-        { statusCode: 400, error: 'Bad Request', message: 'nope', hint: 'try again' },
+        {
+          statusCode: 400,
+          error: 'Bad Request',
+          message: 'nope',
+          hint: 'try again',
+        },
         400,
       ),
       host,

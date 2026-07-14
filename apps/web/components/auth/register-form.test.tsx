@@ -25,10 +25,16 @@ describe("RegisterForm", () => {
     fireEvent.change(screen.getByLabelText(/password/i), { target: { value: "password1" } });
     fireEvent.click(screen.getByRole("button", { name: /create account/i }));
     await waitFor(() =>
-      expect(apiFetch).toHaveBeenCalledWith("auth/register", expect.objectContaining({ method: "POST" })),
+      expect(apiFetch).toHaveBeenCalledWith(
+        "auth/register",
+        expect.objectContaining({ method: "POST" }),
+      ),
     );
     await waitFor(() =>
-      expect(signIn).toHaveBeenCalledWith("credentials", expect.objectContaining({ email: "jan@x.com", password: "password1", redirect: false })),
+      expect(signIn).toHaveBeenCalledWith(
+        "credentials",
+        expect.objectContaining({ email: "jan@x.com", password: "password1", redirect: false }),
+      ),
     );
   });
 

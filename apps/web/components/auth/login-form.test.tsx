@@ -25,7 +25,10 @@ describe("LoginForm", () => {
     fireEvent.change(screen.getByLabelText(/password/i), { target: { value: "password1" } });
     fireEvent.click(screen.getByRole("button", { name: /^sign in$/i }));
     await waitFor(() =>
-      expect(signIn).toHaveBeenCalledWith("credentials", expect.objectContaining({ email: "jan@x.com", password: "password1", redirect: false })),
+      expect(signIn).toHaveBeenCalledWith(
+        "credentials",
+        expect.objectContaining({ email: "jan@x.com", password: "password1", redirect: false }),
+      ),
     );
   });
 });

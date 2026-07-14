@@ -1,0 +1,103 @@
+# The whole stack, from a clean checkout:
+#
+#   cp .env.example .env
+#   (cd apps/backend && bun run keys:generate)   # signing keys, mounted below
+#   docker compose up --build
+#
+# web   http://localhost:3000
+# admin http://localhost:3001
+# api   http://localhost:9000/doc
+#
+# Only Postgres is needed for local development (`docker compose up -d db`); the
+# app services exist so the images get built and exercised, not just written.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-groundwork}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 9000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-groundwork}
+      DATA_ENCRYPTION_KEY: ${DATA_ENCRYPTION_KEY:?set DATA_ENCRYPTION_KEY in .env — openssl rand -base64 32}
+      AUTH_EXCHANGE_SECRET: ${AUTH_EXCHANGE_SECRET:?set AUTH_EXCHANGE_SECRET in .env — openssl rand -base64 32}
+      JWT_PRIVATE_KEY_PATH: /run/keys/private.pem
+      JWT_PUBLIC_KEY_PATH: /run/keys/public.pem
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:3001
+      APP_WEB_URL: http://localhost:3000
+      FILES_DRIVER: local
+      LOCAL_STORAGE_DIR: /repo/apps/backend/storage
+      MAIL_TRANSPORT: log
+      # Single instance here, so it is safe to migrate and seed on boot. Neither
+      # belongs in a real deployment — drive both from a release step.
+      RUN_MIGRATIONS: "true"
+      RUN_SEED: "true"
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-ChangeMe123!}
+    ports:
+      - "9000:9000"
+    volumes:
+      # Read-only, and never baked into the image: a key in a layer is a key
+      # everyone who can pull the image holds.
+      - ./apps/backend/keys:/run/keys:ro
+      - backend_storage:/repo/apps/backend/storage
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      # Server-side calls cross the compose network; AUTH_URL is what the browser sees.
+      API_URL: http://backend:9000/v1
+      AUTH_URL: http://localhost:3000
+      AUTH_SECRET: ${AUTH_SECRET:?set AUTH_SECRET in .env — openssl rand -base64 32}
+      AUTH_EXCHANGE_SECRET: ${AUTH_EXCHANGE_SECRET}
+      AUTH_TRUST_HOST: "true"
+    ports:
+      - "3000:3000"
+
+  admin:
+    build:
+      context: .
+      dockerfile: apps/admin/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      API_URL: http://backend:9000/v1
+      AUTH_URL: http://localhost:3001
+      AUTH_SECRET: ${AUTH_SECRET:?set AUTH_SECRET in .env — openssl rand -base64 32}
+      AUTH_EXCHANGE_SECRET: ${AUTH_EXCHANGE_SECRET}
+      AUTH_TRUST_HOST: "true"
+    ports:
+      - "3001:3001"
+
+volumes:
+  postgres_data:
+  backend_storage:

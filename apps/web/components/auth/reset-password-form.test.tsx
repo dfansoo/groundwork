@@ -32,7 +32,10 @@ describe("ResetPasswordForm", () => {
     fireEvent.change(screen.getByLabelText(/confirm/i), { target: { value: "password1" } });
     fireEvent.click(screen.getByRole("button", { name: /reset password/i }));
     await waitFor(() =>
-      expect(apiFetch).toHaveBeenCalledWith("auth/reset-password", expect.objectContaining({ method: "POST" })),
+      expect(apiFetch).toHaveBeenCalledWith(
+        "auth/reset-password",
+        expect.objectContaining({ method: "POST" }),
+      ),
     );
     await waitFor(() => expect(push).toHaveBeenCalledWith("/login"));
   });

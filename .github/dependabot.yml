@@ -1,0 +1,63 @@
+version: 2
+
+# A template whose selling point is "the current stable versions" rots the moment
+# nobody is watching. These PRs are the watching.
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      # One PR per ecosystem rather than thirty. A framework's packages are
+      # released and versioned together, so splitting them across PRs produces
+      # combinations that were never tested together.
+      next:
+        patterns:
+          - "next"
+          - "next-auth"
+          - "@auth/*"
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+      nest:
+        patterns:
+          - "@nestjs/*"
+          - "@types/express"
+      prisma:
+        patterns:
+          - "prisma"
+          - "@prisma/*"
+      tooling:
+        patterns:
+          - "turbo"
+          - "typescript"
+          - "eslint*"
+          - "@typescript-eslint/*"
+          - "prettier*"
+          - "vitest"
+          - "jest"
+          - "ts-jest"
+          - "@playwright/*"
+      # Everything else, patch and minor only — a major of some transitive
+      # dependency deserves its own PR and its own read.
+      minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: docker
+    directories:
+      - /apps/backend
+      - /apps/web
+      - /apps/admin
+    schedule:
+      interval: weekly

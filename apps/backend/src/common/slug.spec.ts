@@ -4,7 +4,10 @@ import { slugify, resolveSlug, withSlugConflict } from './slug';
 
 /** Shaped like a Prisma P2002 from the engine client. `slug.ts` duck-types it. */
 function slugConflictError(target: unknown = ['slug']) {
-  return Object.assign(new Error('Unique constraint failed'), { code: 'P2002', meta: { target } });
+  return Object.assign(new Error('Unique constraint failed'), {
+    code: 'P2002',
+    meta: { target },
+  });
 }
 
 /**
@@ -20,7 +23,8 @@ function driverAdapterConflictError() {
         name: 'DriverAdapterError',
         cause: {
           originalCode: '23505',
-          originalMessage: 'duplicate key value violates unique constraint "Item_slug_key"',
+          originalMessage:
+            'duplicate key value violates unique constraint "Item_slug_key"',
           kind: 'UniqueConstraintViolation',
           constraint: { fields: ['slug'] },
         },
@@ -55,7 +59,9 @@ describe('slugify', () => {
 
 describe('resolveSlug', () => {
   it('derives the slug from the title when none is supplied', async () => {
-    const create = jest.fn<(s: string) => Promise<string>>().mockResolvedValue('ok');
+    const create = jest
+      .fn<(s: string) => Promise<string>>()
+      .mockResolvedValue('ok');
     await resolveSlug(undefined, 'Wildlife Escape', create);
     expect(create).toHaveBeenCalledWith('wildlife-escape');
   });
@@ -65,28 +71,36 @@ describe('resolveSlug', () => {
       .fn<(s: string) => Promise<string>>()
       .mockRejectedValueOnce(slugConflictError())
       .mockResolvedValueOnce('ok');
-    await expect(resolveSlug(undefined, 'Wildlife Escape', create)).resolves.toBe('ok');
+    await expect(
+      resolveSlug(undefined, 'Wildlife Escape', create),
+    ).resolves.toBe('ok');
     expect(create).toHaveBeenNthCalledWith(1, 'wildlife-escape');
     expect(create).toHaveBeenNthCalledWith(2, 'wildlife-escape-2');
   });
 
   it('mints a slug when the title has no alphanumerics', async () => {
-    const create = jest.fn<(s: string) => Promise<string>>().mockResolvedValue('ok');
+    const create = jest
+      .fn<(s: string) => Promise<string>>()
+      .mockResolvedValue('ok');
     await resolveSlug(undefined, '***', create);
     expect(create.mock.calls[0][0]).toMatch(/^[0-9a-f-]{36}$/);
   });
 
   it('never renames an explicitly supplied slug — it reports 422', async () => {
-    const create = jest.fn<(s: string) => Promise<string>>().mockRejectedValue(slugConflictError());
-    await expect(resolveSlug('taken', 'Anything', create)).rejects.toBeInstanceOf(
-      UnprocessableEntityException,
-    );
+    const create = jest
+      .fn<(s: string) => Promise<string>>()
+      .mockRejectedValue(slugConflictError());
+    await expect(
+      resolveSlug('taken', 'Anything', create),
+    ).rejects.toBeInstanceOf(UnprocessableEntityException);
     expect(create).toHaveBeenCalledTimes(1);
   });
 
   it('rethrows errors that are not slug conflicts', async () => {
     const boom = new Error('connection reset');
-    const create = jest.fn<(s: string) => Promise<string>>().mockRejectedValue(boom);
+    const create = jest
+      .fn<(s: string) => Promise<string>>()
+      .mockRejectedValue(boom);
     await expect(resolveSlug(undefined, 'X', create)).rejects.toBe(boom);
   });
 
@@ -105,26 +119,33 @@ describe('resolveSlug', () => {
       .fn<(s: string) => Promise<string>>()
       .mockRejectedValueOnce(driverAdapterConflictError())
       .mockResolvedValueOnce('ok');
-    await expect(resolveSlug(undefined, 'Wildlife Escape', create)).resolves.toBe('ok');
+    await expect(
+      resolveSlug(undefined, 'Wildlife Escape', create),
+    ).resolves.toBe('ok');
     expect(create).toHaveBeenNthCalledWith(2, 'wildlife-escape-2');
   });
 
   it('falls back to a random token once linear probing is exhausted', async () => {
     const create = jest.fn<(s: string) => Promise<string>>();
     // Reject wildlife-escape, -2, -3, -4, -5; the 6th attempt must not be `-6`.
-    for (let i = 0; i < 5; i += 1) create.mockRejectedValueOnce(driverAdapterConflictError());
+    for (let i = 0; i < 5; i += 1)
+      create.mockRejectedValueOnce(driverAdapterConflictError());
     create.mockResolvedValueOnce('ok');
 
-    await expect(resolveSlug(undefined, 'Wildlife Escape', create)).resolves.toBe('ok');
+    await expect(
+      resolveSlug(undefined, 'Wildlife Escape', create),
+    ).resolves.toBe('ok');
     expect(create).toHaveBeenNthCalledWith(5, 'wildlife-escape-5');
     expect(create.mock.calls[5][0]).toMatch(/^wildlife-escape-[0-9a-f]{8}$/);
   });
 
   it('gives up after the attempt budget rather than looping forever', async () => {
-    const create = jest.fn<(s: string) => Promise<string>>().mockRejectedValue(driverAdapterConflictError());
-    await expect(resolveSlug(undefined, 'Wildlife Escape', create)).rejects.toBeInstanceOf(
-      UnprocessableEntityException,
-    );
+    const create = jest
+      .fn<(s: string) => Promise<string>>()
+      .mockRejectedValue(driverAdapterConflictError());
+    await expect(
+      resolveSlug(undefined, 'Wildlife Escape', create),
+    ).rejects.toBeInstanceOf(UnprocessableEntityException);
     expect(create).toHaveBeenCalledTimes(20);
   });
 });
@@ -137,6 +158,8 @@ describe('withSlugConflict', () => {
   });
 
   it('passes the result through when there is no conflict', async () => {
-    await expect(withSlugConflict('free', () => Promise.resolve(7))).resolves.toBe(7);
+    await expect(
+      withSlugConflict('free', () => Promise.resolve(7)),
+    ).resolves.toBe(7);
   });
 });

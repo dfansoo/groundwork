@@ -32,7 +32,10 @@ export class StaffRepository {
   }
 
   async findById(id: string): Promise<UserWithRoles | null> {
-    return this.prisma.user.findUnique({ where: { id }, include: { roles: true } });
+    return this.prisma.user.findUnique({
+      where: { id },
+      include: { roles: true },
+    });
   }
 
   private staffWhere(filters: StaffFilters): Prisma.UserWhereInput {
@@ -77,7 +80,10 @@ export class StaffRepository {
       await tx.userRole.createMany({
         data: roles.map((role) => ({ userId: id, role })),
       });
-      return tx.user.findUniqueOrThrow({ where: { id }, include: { roles: true } });
+      return tx.user.findUniqueOrThrow({
+        where: { id },
+        include: { roles: true },
+      });
     });
   }
 
@@ -97,5 +103,9 @@ export class StaffRepository {
       select: { id: true },
     });
     return Boolean(found);
+  }
+
+  async countHoldersOfRole(role: Role): Promise<number> {
+    return this.prisma.userRole.count({ where: { role } });
   }
 }

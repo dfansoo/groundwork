@@ -16,7 +16,7 @@ export class ApiError extends Error {
     readonly details?: ApiErrorDetail[],
   ) {
     super(message);
-    this.name = 'ApiError';
+    this.name = "ApiError";
   }
 
   /** `{ email: 'email must be an email' }` — ready for setError() in react-hook-form. */
@@ -31,9 +31,9 @@ export class ApiError extends Error {
 }
 
 export function toApiError(status: number, body: unknown): ApiError {
-  if (body && typeof body === 'object') {
+  if (body && typeof body === "object") {
     const b = body as { message?: unknown; details?: ApiErrorDetail[] };
-    if (typeof b.message === 'string') {
+    if (typeof b.message === "string") {
       return new ApiError(status, b.message, b.details);
     }
   }

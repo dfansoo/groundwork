@@ -35,7 +35,10 @@ describe("getPublic", () => {
   });
 
   it("throws ApiError with status + message on non-2xx", async () => {
-    vi.stubGlobal("fetch", mockFetch(409, { success: false, message: "This package is temporarily unavailable" }));
+    vi.stubGlobal(
+      "fetch",
+      mockFetch(409, { success: false, message: "This package is temporarily unavailable" }),
+    );
     await expect(getPublic("packages/x")).rejects.toMatchObject({
       name: "ApiError",
       status: 409,

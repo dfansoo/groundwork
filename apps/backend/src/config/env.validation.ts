@@ -18,9 +18,22 @@ export const validationSchema = Joi.object({
 
   JWT_PRIVATE_KEY_PATH: Joi.string().required(),
   JWT_PUBLIC_KEY_PATH: Joi.string().required(),
-  AUTH_EXCHANGE_SECRET: Joi.string()
-    .optional()
-    .default('local-auth-exchange-secret-please-change'),
+  // Whoever holds this can mint a session for ANY email via /v1/auth/exchange.
+  // A default is a convenience in development and a hole in production — the
+  // fallback below is public, sitting in this file in every clone of the
+  // template — so production must set its own, and refuses to boot otherwise.
+  AUTH_EXCHANGE_SECRET: Joi.string().when('NODE_ENV', {
+    is: 'production',
+    then: Joi.string().min(32).required().messages({
+      'any.required':
+        'AUTH_EXCHANGE_SECRET must be set in production — generate one with: openssl rand -base64 32',
+      'string.min':
+        'AUTH_EXCHANGE_SECRET must be at least 32 characters in production — generate one with: openssl rand -base64 32',
+    }),
+    otherwise: Joi.string()
+      .optional()
+      .default('local-auth-exchange-secret-please-change'),
+  }),
   ACCESS_TOKEN_TTL: Joi.string().optional().default('15m'),
   REFRESH_TOKEN_TTL: Joi.string().optional().default('30d'),
   ALLOWED_ORIGINS: Joi.string()
@@ -56,7 +69,10 @@ export const validationSchema = Joi.object({
     then: Joi.required(),
     otherwise: Joi.string().allow('').optional(),
   }),
-  MAIL_FROM_EMAIL: Joi.string().email().optional().default('no-reply@example.com'),
+  MAIL_FROM_EMAIL: Joi.string()
+    .email()
+    .optional()
+    .default('no-reply@example.com'),
   MAIL_FROM_NAME: Joi.string().optional().default('Groundwork'),
   APP_WEB_URL: Joi.string().uri().optional().default('http://localhost:3000'),
 

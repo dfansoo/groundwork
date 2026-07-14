@@ -54,6 +54,9 @@ jobs:
       - name: Build
         run: bunx turbo run build
 
+      - name: Check formatting
+        run: bunx prettier --check .
+
       - name: Fail if openapi.json is stale
         run: |
           bunx turbo run openapi --filter=backend
@@ -105,6 +108,13 @@ jobs:
           bunx prisma migrate deploy
           bun run db:seed
 
+      # These drive the real HTTP stack against the real database: router, global
+      # pipes, guards, Prisma, Postgres. They are what proves the guards are
+      # actually attached to the routes rather than merely correct in isolation.
+      - name: Integration tests (real database)
+        working-directory: apps/backend
+        run: bun run test:int
+
       - name: Start the API
         working-directory: apps/backend
         run: |
@@ -145,3 +155,30 @@ jobs:
             apps/admin/playwright-report
             /tmp/api.log
           retention-days: 7
+
+  # The Dockerfiles were broken for a long time precisely because nothing ever
+  # built them: a monorepo image only resolves from the repo root, and the ones
+  # inherited from a standalone repo did not. Build all three on every change so
+  # they cannot rot again.
+  images:
+    name: docker images
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [backend, web, admin]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build ${{ matrix.app }}
+        uses: docker/build-push-action@v6
+        with:
+          # The root, not the app directory. A Bun workspace only installs from there.
+          context: .
+          file: apps/${{ matrix.app }}/Dockerfile
+          push: false
+          tags: groundwork-${{ matrix.app }}:ci
+          cache-from: type=gha,scope=${{ matrix.app }}
+          cache-to: type=gha,scope=${{ matrix.app }},mode=max

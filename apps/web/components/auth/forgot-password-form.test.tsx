@@ -15,7 +15,10 @@ describe("ForgotPasswordForm", () => {
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: "jan@x.com" } });
     fireEvent.click(screen.getByRole("button", { name: /send reset link/i }));
     await waitFor(() =>
-      expect(apiFetch).toHaveBeenCalledWith("auth/forgot-password", expect.objectContaining({ method: "POST" })),
+      expect(apiFetch).toHaveBeenCalledWith(
+        "auth/forgot-password",
+        expect.objectContaining({ method: "POST" }),
+      ),
     );
     expect(await screen.findByText(/check your inbox/i)).toBeInTheDocument();
   });

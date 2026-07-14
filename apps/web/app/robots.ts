@@ -8,7 +8,15 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       // Not secret — just pages with no crawl value. A signed-out crawler sees
       // only redirects here.
-      disallow: ["/account", "/account/", "/api/", "/login", "/register", "/forgot-password", "/reset-password"],
+      disallow: [
+        "/account",
+        "/account/",
+        "/api/",
+        "/login",
+        "/register",
+        "/forgot-password",
+        "/reset-password",
+      ],
     },
     sitemap: `${site.url}/sitemap.xml`,
   };
