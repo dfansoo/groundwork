@@ -1,0 +1,136 @@
+// Groundwork — the boilerplate schema.
+//
+// Nine models: the identity/RBAC core (User, Account, AuthSession,
+// PasswordResetToken, UserRole, Role), the audit log, the file-asset registry,
+// and Item — the example feature. Copy Item (and src/items) to start a real one.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                  String               @id @default(cuid())
+  email               String               @unique
+  username            String
+  avatar              String?
+  password            String?
+  emailVerifiedAt     DateTime?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  roles               UserRole[]
+  accounts            Account[]
+  sessions            AuthSession[]
+  passwordResetTokens PasswordResetToken[]
+}
+
+/// A linked OAuth identity (e.g. Google). The backend owns provider linking;
+/// the Next.js apps only run the redirect dance and exchange the profile here.
+model Account {
+  id                String   @id @default(cuid())
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            String
+  provider          String
+  providerAccountId String
+  accessToken       String?
+  refreshToken      String?
+  idToken           String?
+  tokenType         String?
+  scope             String?
+  expiresAt         Int?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([provider, providerAccountId])
+}
+
+model AuthSession {
+  id               String    @id @default(cuid())
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           String
+  refreshTokenHash String    @unique
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  lastUsedAt       DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model PasswordResetToken {
+  id         String    @id @default(cuid())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model UserRole {
+  id     String @id @default(cuid())
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+  role   Role
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  EDITOR
+  VIEWER
+  USER
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  action    String
+  entity    String
+  entityId  String
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([createdAt])
+}
+
+model FileAsset {
+  id           String    @id @default(cuid())
+  bucket       String
+  key          String    @unique
+  visibility   String    @default("private") // "public" | "private"
+  status       String    @default("PENDING") // "PENDING" | "READY"
+  kind         String
+  originalName String
+  mimeType     String
+  sizeBytes    Int       @default(0)
+  url          String?
+  uploadedById String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  @@index([kind])
+  @@index([status])
+}
+
+/// The example feature. Copy this model and src/items/ to start a real feature,
+/// then delete both. Nothing else in the schema depends on it.
+model Item {
+  id           String    @id @default(cuid())
+  title        String
+  slug         String    @unique
+  description  String?
+  published    Boolean   @default(false)
+  imageFileIds String[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  @@index([published])
+}
