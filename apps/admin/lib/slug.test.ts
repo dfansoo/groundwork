@@ -4,7 +4,7 @@ import { slugifyTitle, slugField } from "./slug";
 describe("slugifyTitle", () => {
   it("mirrors the backend: lowercase, dashed, diacritics stripped", () => {
     expect(slugifyTitle("Yala Safari Day Tour")).toBe("yala-safari-day-tour");
-    expect(slugifyTitle("Café  Ceylon!!")).toBe("cafe-ceylon");
+    expect(slugifyTitle("Café  Crème!!")).toBe("cafe-creme");
     expect(slugifyTitle("  --Hello--  ")).toBe("hello");
     expect(slugifyTitle("***")).toBe("");
   });
