@@ -24,10 +24,19 @@ describe('FilesRepository', () => {
 
   it('markReady sets status READY with metadata', async () => {
     fileAsset.update.mockResolvedValue({});
-    await repo.markReady('id1', { sizeBytes: 10, mimeType: 'image/png', url: null });
+    await repo.markReady('id1', {
+      sizeBytes: 10,
+      mimeType: 'image/png',
+      url: null,
+    });
     expect(fileAsset.update).toHaveBeenCalledWith({
       where: { id: 'id1' },
-      data: { sizeBytes: 10, mimeType: 'image/png', url: null, status: 'READY' },
+      data: {
+        sizeBytes: 10,
+        mimeType: 'image/png',
+        url: null,
+        status: 'READY',
+      },
     });
   });
 

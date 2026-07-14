@@ -1,4 +1,11 @@
-import { Controller, Get, Header, Query, StreamableFile, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Header,
+  Query,
+  StreamableFile,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuditService, AuditEventView } from './audit.service';
 import { ListAuditEventsQueryDto } from './dto/list-audit-events-query.dto';
@@ -17,8 +24,12 @@ export class AuditController {
 
   @Get()
   @RequirePermissions(Permission.AUDIT_READ)
-  @ApiOperation({ summary: 'List audit events (paginated; filter by date range + actor role)' })
-  list(@Query() query: ListAuditEventsQueryDto): Promise<PaginatedResult<AuditEventView>> {
+  @ApiOperation({
+    summary: 'List audit events (paginated; filter by date range + actor role)',
+  })
+  list(
+    @Query() query: ListAuditEventsQueryDto,
+  ): Promise<PaginatedResult<AuditEventView>> {
     return this.audit.list(query);
   }
 
@@ -26,8 +37,12 @@ export class AuditController {
   @RequirePermissions(Permission.AUDIT_READ)
   @Header('Content-Type', 'text/csv; charset=utf-8')
   @Header('Content-Disposition', 'attachment; filename="audit-events.csv"')
-  @ApiOperation({ summary: 'Export filtered audit events as CSV (max 5000 rows)' })
-  async export(@Query() query: ListAuditEventsQueryDto): Promise<StreamableFile> {
+  @ApiOperation({
+    summary: 'Export filtered audit events as CSV (max 5000 rows)',
+  })
+  async export(
+    @Query() query: ListAuditEventsQueryDto,
+  ): Promise<StreamableFile> {
     const csv = await this.audit.exportCsv(query);
     return new StreamableFile(Buffer.from(csv, 'utf-8'));
   }

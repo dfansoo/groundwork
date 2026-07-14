@@ -28,9 +28,11 @@ import { ProviderParamsDto } from './dto/provider-params.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { SessionParamsDto } from './dto/session-params.dto';
 import { AuthenticatedUser } from './interfaces/authenticated-user.interface';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { ExchangeSecretGuard } from './exchange-secret.guard';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { RolesGuard } from './roles.guard';
+import { THROTTLER_CREDENTIALS, THROTTLER_IP } from './throttle.config';
 
 @ApiTags('auth')
 @Controller({
@@ -41,24 +43,60 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
+  @Throttle({ [THROTTLER_CREDENTIALS]: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Register a new user' })
   @ApiResponse({ status: 201, description: 'User successfully registered.' })
   @ApiResponse({ status: 400, description: 'Bad Request.' })
+  @ApiResponse({ status: 429, description: 'Too many requests.' })
   async register(@Body() createUserDto: CreateUserDto) {
     return this.authService.register(createUserDto);
   }
 
+  /**
+   * Three limits stack here. The `credentials` throttler caps guesses at one
+   * account from one host; the `ip` throttler stops an attacker sidestepping that
+   * by rotating the email; and AuthService.login locks the account outright after
+   * ten consecutive failures, which is the only one that survives an attacker
+   * rotating IPs too.
+   *
+   * The limit stays above the lockout threshold on purpose: hitting ten failures
+   * should lock the account (403), not merely rate-limit it (429).
+   */
   @Post('login')
+  @Throttle({ [THROTTLER_CREDENTIALS]: { limit: 20, ttl: 60000 } })
   @ApiOperation({ summary: 'Log in and get a JWT' })
   @ApiResponse({ status: 200, description: 'Returns an access token.' })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Account temporarily locked.' })
+  @ApiResponse({ status: 429, description: 'Too many requests.' })
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Post('change-password')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ [THROTTLER_IP]: { limit: 5, ttl: 60000 } })
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Change your own password; revokes every other session',
+  })
+  @ApiResponse({ status: 200, description: 'Password updated.' })
+  @ApiResponse({ status: 401, description: 'Current password is incorrect.' })
+  async changePassword(
+    @Request() req: { user: AuthenticatedUser },
+    @Body() dto: ChangePasswordDto,
+  ) {
+    return this.authService.changePassword(
+      req.user.id,
+      dto.currentPassword,
+      dto.newPassword,
+    );
+  }
+
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Throttle({ [THROTTLER_CREDENTIALS]: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Request a password reset link' })
   @ApiResponse({
     status: 200,
@@ -70,7 +108,7 @@ export class AuthController {
 
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Throttle({ [THROTTLER_IP]: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Reset a password using a valid token' })
   @ApiResponse({ status: 200, description: 'Password updated.' })
   @ApiResponse({ status: 400, description: 'Token invalid or expired.' })

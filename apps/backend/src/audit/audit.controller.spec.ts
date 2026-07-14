@@ -8,8 +8,13 @@ describe('AuditController', () => {
 
   beforeEach(() => {
     service = {
-      list: jest.fn(async () => ({ items: [], meta: { total: 0, page: 1, limit: 20, totalPages: 0 } })),
-      exportCsv: jest.fn(async () => 'Timestamp,User,Email,Roles,Action,Entity,Entity ID'),
+      list: jest.fn(async () => ({
+        items: [],
+        meta: { total: 0, page: 1, limit: 20, totalPages: 0 },
+      })),
+      exportCsv: jest.fn(
+        async () => 'Timestamp,User,Email,Roles,Action,Entity,Entity ID',
+      ),
     };
     ctrl = new AuditController(service);
   });
@@ -27,6 +32,8 @@ describe('AuditController', () => {
     expect(file).toBeInstanceOf(StreamableFile);
     const chunks: Buffer[] = [];
     for await (const chunk of file.getStream()) chunks.push(chunk as Buffer);
-    expect(Buffer.concat(chunks).toString('utf-8')).toBe('Timestamp,User,Email,Roles,Action,Entity,Entity ID');
+    expect(Buffer.concat(chunks).toString('utf-8')).toBe(
+      'Timestamp,User,Email,Roles,Action,Entity,Entity ID',
+    );
   });
 });

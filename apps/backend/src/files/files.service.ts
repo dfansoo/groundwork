@@ -39,7 +39,10 @@ export class FilesService {
     private readonly audit: AuditService,
   ) {}
 
-  async createUpload(dto: CreateUploadDto, actorId?: string): Promise<UploadTicket> {
+  async createUpload(
+    dto: CreateUploadDto,
+    actorId?: string,
+  ): Promise<UploadTicket> {
     if (!allowedContentTypes(dto.kind).includes(dto.contentType)) {
       throw new UnprocessableEntityException(
         `Content type ${dto.contentType} is not allowed for kind ${dto.kind}`,
@@ -58,7 +61,10 @@ export class FilesService {
       uploadedById: actorId ?? null,
     });
 
-    const { url, expiresAt } = await this.storage.presignPut(key, dto.contentType);
+    const { url, expiresAt } = await this.storage.presignPut(
+      key,
+      dto.contentType,
+    );
     await this.audit.record({
       actorId,
       action: 'files.upload.init',
@@ -74,7 +80,8 @@ export class FilesService {
     if (!asset) throw new NotFoundException('File asset not found');
 
     const head = await this.storage.headObject(asset.key);
-    if (!head) throw new ConflictException('Uploaded object not found in storage');
+    if (!head)
+      throw new ConflictException('Uploaded object not found in storage');
 
     const maxBytes = maxBytesForKind(asset.kind);
     if (head.contentLength > maxBytes) {
@@ -84,7 +91,8 @@ export class FilesService {
       );
     }
 
-    const url = asset.visibility === 'public' ? this.storage.publicUrl(asset.key) : null;
+    const url =
+      asset.visibility === 'public' ? this.storage.publicUrl(asset.key) : null;
     const ready = await this.repo.markReady(id, {
       sizeBytes: head.contentLength,
       mimeType: head.contentType,

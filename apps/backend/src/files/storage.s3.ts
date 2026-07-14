@@ -33,7 +33,9 @@ export class S3StorageDriver implements StorageDriver {
       region,
       credentials: {
         accessKeyId: this.config.getOrThrow<string>('AWS_ACCESS_KEY_ID'),
-        secretAccessKey: this.config.getOrThrow<string>('AWS_SECRET_ACCESS_KEY'),
+        secretAccessKey: this.config.getOrThrow<string>(
+          'AWS_SECRET_ACCESS_KEY',
+        ),
       },
     });
   }
@@ -74,7 +76,9 @@ export class S3StorageDriver implements StorageDriver {
       Key: key,
       ContentType: contentType,
     });
-    const url = await presignS3(this.s3, command, { expiresIn: expiresInSeconds });
+    const url = await presignS3(this.s3, command, {
+      expiresIn: expiresInSeconds,
+    });
     return { url, expiresAt: new Date(Date.now() + expiresInSeconds * 1000) };
   }
 
@@ -82,7 +86,11 @@ export class S3StorageDriver implements StorageDriver {
    * Upload a buffer we generated ourselves (an invoice PDF, say). Presigning is for
    * bytes the browser holds; this is for bytes the server holds.
    */
-  async putObject(key: string, body: Buffer, contentType: string): Promise<void> {
+  async putObject(
+    key: string,
+    body: Buffer,
+    contentType: string,
+  ): Promise<void> {
     await this.s3.send(
       new PutObjectCommand({
         Bucket: this.bucket,
@@ -126,7 +134,9 @@ export class S3StorageDriver implements StorageDriver {
   }
 
   async deleteObject(key: string): Promise<void> {
-    await this.s3.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }));
+    await this.s3.send(
+      new DeleteObjectCommand({ Bucket: this.bucket, Key: key }),
+    );
   }
 
   publicUrl(key: string): string {

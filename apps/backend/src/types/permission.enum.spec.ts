@@ -8,7 +8,9 @@ import {
 
 describe('RBAC vocabulary', () => {
   it('grants SUPER_ADMIN every permission', () => {
-    expect(ROLE_PERMISSIONS[Role.SUPER_ADMIN]).toEqual(Object.values(Permission));
+    expect(ROLE_PERMISSIONS[Role.SUPER_ADMIN]).toEqual(
+      Object.values(Permission),
+    );
   });
 
   it('gives USER no staff or audit access', () => {
@@ -31,11 +33,16 @@ describe('RBAC vocabulary', () => {
   });
 
   it('reserves staff writes for SUPER_ADMIN alone', () => {
-    expect(rolesWithPermission(Permission.STAFF_WRITE)).toEqual([Role.SUPER_ADMIN]);
+    expect(rolesWithPermission(Permission.STAFF_WRITE)).toEqual([
+      Role.SUPER_ADMIN,
+    ]);
   });
 
   it('derives the roles holding a permission rather than hardcoding them', () => {
-    expect(rolesWithPermission(Permission.AUDIT_READ)).toEqual([Role.SUPER_ADMIN, Role.ADMIN]);
+    expect(rolesWithPermission(Permission.AUDIT_READ)).toEqual([
+      Role.SUPER_ADMIN,
+      Role.ADMIN,
+    ]);
   });
 
   it('returns an empty set for a user with no roles', () => {

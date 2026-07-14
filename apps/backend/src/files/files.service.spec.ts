@@ -24,15 +24,20 @@ describe('FilesService', () => {
     };
     storage = {
       bucketName: 'test-bucket',
-      presignPut: jest
-        .fn<(...args: any[]) => any>()
-        .mockResolvedValue({ url: 'https://s3/put', expiresAt: new Date(Date.now() + 300000) }),
+      presignPut: jest.fn<(...args: any[]) => any>().mockResolvedValue({
+        url: 'https://s3/put',
+        expiresAt: new Date(Date.now() + 300000),
+      }),
       headObject: jest.fn(),
-      deleteObject: jest.fn<(...args: any[]) => any>().mockResolvedValue(undefined),
+      deleteObject: jest
+        .fn<(...args: any[]) => any>()
+        .mockResolvedValue(undefined),
       publicUrl: jest.fn((k: string) => `https://cdn/${k}`),
       signPrivateUrl: jest.fn((k: string) => `https://cdn/${k}?sig=1`),
     };
-    audit = { record: jest.fn<(...args: any[]) => any>().mockResolvedValue(undefined) };
+    audit = {
+      record: jest.fn<(...args: any[]) => any>().mockResolvedValue(undefined),
+    };
     svc = new FilesService(repo, storage, audit);
   });
 
@@ -40,7 +45,12 @@ describe('FilesService', () => {
     it('rejects a disallowed content type', async () => {
       await expect(
         svc.createUpload(
-          { visibility: 'public', kind: 'item', filename: 'x.gif', contentType: 'image/gif' },
+          {
+            visibility: 'public',
+            kind: 'item',
+            filename: 'x.gif',
+            contentType: 'image/gif',
+          },
           'admin1',
         ),
       ).rejects.toBeInstanceOf(UnprocessableEntityException);
@@ -50,7 +60,12 @@ describe('FilesService', () => {
     it('creates a PENDING asset and returns a presigned URL', async () => {
       repo.create.mockResolvedValue({ id: 'asset1' });
       const res = await svc.createUpload(
-        { visibility: 'public', kind: 'item', filename: 'x.jpg', contentType: 'image/jpeg' },
+        {
+          visibility: 'public',
+          kind: 'item',
+          filename: 'x.jpg',
+          contentType: 'image/jpeg',
+        },
         'admin1',
       );
       expect(res.assetId).toBe('asset1');
@@ -66,9 +81,14 @@ describe('FilesService', () => {
           uploadedById: 'admin1',
         }),
       );
-      expect(repo.create.mock.calls[0][0].key).toMatch(/^public\/item\/[0-9a-f-]+\.jpg$/);
+      expect(repo.create.mock.calls[0][0].key).toMatch(
+        /^public\/item\/[0-9a-f-]+\.jpg$/,
+      );
       expect(audit.record).toHaveBeenCalledWith(
-        expect.objectContaining({ action: 'files.upload.init', entity: 'FileAsset' }),
+        expect.objectContaining({
+          action: 'files.upload.init',
+          entity: 'FileAsset',
+        }),
       );
     });
   });
@@ -76,12 +96,17 @@ describe('FilesService', () => {
   describe('confirm', () => {
     it('throws NotFound for an unknown asset', async () => {
       repo.findById.mockResolvedValue(null);
-      await expect(svc.confirm('nope')).rejects.toBeInstanceOf(NotFoundException);
+      await expect(svc.confirm('nope')).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
 
     it('throws Conflict when the object is missing', async () => {
       repo.findById.mockResolvedValue({
-        id: 'a1', key: 'public/item/a.jpg', kind: 'item', visibility: 'public',
+        id: 'a1',
+        key: 'public/item/a.jpg',
+        kind: 'item',
+        visibility: 'public',
       });
       storage.headObject.mockResolvedValue(null);
       await expect(svc.confirm('a1')).rejects.toBeInstanceOf(ConflictException);
@@ -89,19 +114,33 @@ describe('FilesService', () => {
 
     it('deletes and rejects an oversized upload', async () => {
       repo.findById.mockResolvedValue({
-        id: 'a1', key: 'public/item/a.jpg', kind: 'item', visibility: 'public',
+        id: 'a1',
+        key: 'public/item/a.jpg',
+        kind: 'item',
+        visibility: 'public',
       });
-      storage.headObject.mockResolvedValue({ contentLength: 999_999_999, contentType: 'image/jpeg' });
-      await expect(svc.confirm('a1')).rejects.toBeInstanceOf(UnprocessableEntityException);
+      storage.headObject.mockResolvedValue({
+        contentLength: 999_999_999,
+        contentType: 'image/jpeg',
+      });
+      await expect(svc.confirm('a1')).rejects.toBeInstanceOf(
+        UnprocessableEntityException,
+      );
       expect(storage.deleteObject).toHaveBeenCalledWith('public/item/a.jpg');
       expect(repo.markReady).not.toHaveBeenCalled();
     });
 
     it('marks READY and sets a public URL', async () => {
       repo.findById.mockResolvedValue({
-        id: 'a1', key: 'public/item/a.jpg', kind: 'item', visibility: 'public',
+        id: 'a1',
+        key: 'public/item/a.jpg',
+        kind: 'item',
+        visibility: 'public',
       });
-      storage.headObject.mockResolvedValue({ contentLength: 1000, contentType: 'image/jpeg' });
+      storage.headObject.mockResolvedValue({
+        contentLength: 1000,
+        contentType: 'image/jpeg',
+      });
       repo.markReady.mockResolvedValue({ id: 'a1', status: 'READY' });
       await svc.confirm('a1', 'admin1');
       expect(repo.markReady).toHaveBeenCalledWith('a1', {
@@ -110,25 +149,40 @@ describe('FilesService', () => {
         url: 'https://cdn/public/item/a.jpg',
       });
       expect(audit.record).toHaveBeenCalledWith(
-        expect.objectContaining({ action: 'files.upload.confirm', entity: 'FileAsset' }),
+        expect.objectContaining({
+          action: 'files.upload.confirm',
+          entity: 'FileAsset',
+        }),
       );
     });
 
     it('leaves url null for private assets', async () => {
       repo.findById.mockResolvedValue({
-        id: 'a2', key: 'private/document/a.pdf', kind: 'document', visibility: 'private',
+        id: 'a2',
+        key: 'private/document/a.pdf',
+        kind: 'document',
+        visibility: 'private',
       });
-      storage.headObject.mockResolvedValue({ contentLength: 1000, contentType: 'application/pdf' });
+      storage.headObject.mockResolvedValue({
+        contentLength: 1000,
+        contentType: 'application/pdf',
+      });
       repo.markReady.mockResolvedValue({ id: 'a2', status: 'READY' });
       await svc.confirm('a2');
-      expect(repo.markReady).toHaveBeenCalledWith('a2', expect.objectContaining({ url: null }));
+      expect(repo.markReady).toHaveBeenCalledWith(
+        'a2',
+        expect.objectContaining({ url: null }),
+      );
     });
   });
 
   describe('getWithUrl', () => {
     it('signs private assets', async () => {
       repo.findById.mockResolvedValue({
-        id: 'a2', key: 'private/document/a.pdf', visibility: 'private', url: null,
+        id: 'a2',
+        key: 'private/document/a.pdf',
+        visibility: 'private',
+        url: null,
       });
       const res = await svc.getWithUrl('a2');
       expect(res.accessUrl).toBe('https://cdn/private/document/a.pdf?sig=1');
@@ -136,7 +190,10 @@ describe('FilesService', () => {
 
     it('returns the stored URL for public assets', async () => {
       repo.findById.mockResolvedValue({
-        id: 'a1', key: 'public/item/a.jpg', visibility: 'public', url: 'https://cdn/public/item/a.jpg',
+        id: 'a1',
+        key: 'public/item/a.jpg',
+        visibility: 'public',
+        url: 'https://cdn/public/item/a.jpg',
       });
       const res = await svc.getWithUrl('a1');
       expect(res.accessUrl).toBe('https://cdn/public/item/a.jpg');
@@ -156,7 +213,10 @@ describe('FilesService', () => {
       expect(storage.deleteObject).toHaveBeenCalledWith('public/item/a.jpg');
       expect(repo.softDelete).toHaveBeenCalledWith('a1');
       expect(audit.record).toHaveBeenCalledWith(
-        expect.objectContaining({ action: 'files.delete', entity: 'FileAsset' }),
+        expect.objectContaining({
+          action: 'files.delete',
+          entity: 'FileAsset',
+        }),
       );
     });
   });
@@ -214,8 +274,18 @@ describe('FilesService', () => {
 
     it('resolves ids to access URLs, preserving input order', async () => {
       repo.findManyByIds.mockResolvedValue([
-        { id: 'a2', key: 'public/item/2.jpg', visibility: 'public', url: 'https://cdn/2.jpg' },
-        { id: 'a1', key: 'public/item/1.jpg', visibility: 'public', url: 'https://cdn/1.jpg' },
+        {
+          id: 'a2',
+          key: 'public/item/2.jpg',
+          visibility: 'public',
+          url: 'https://cdn/2.jpg',
+        },
+        {
+          id: 'a1',
+          key: 'public/item/1.jpg',
+          visibility: 'public',
+          url: 'https://cdn/1.jpg',
+        },
       ]);
       const res = await svc.getManyWithUrls(['a1', 'a2']);
       expect(res.map((a) => a.id)).toEqual(['a1', 'a2']);
@@ -224,7 +294,12 @@ describe('FilesService', () => {
 
     it('skips ids the repo does not return (missing or not READY)', async () => {
       repo.findManyByIds.mockResolvedValue([
-        { id: 'a1', key: 'public/item/1.jpg', visibility: 'public', url: 'https://cdn/1.jpg' },
+        {
+          id: 'a1',
+          key: 'public/item/1.jpg',
+          visibility: 'public',
+          url: 'https://cdn/1.jpg',
+        },
       ]);
       const res = await svc.getManyWithUrls(['a1', 'missing']);
       expect(res.map((a) => a.id)).toEqual(['a1']);

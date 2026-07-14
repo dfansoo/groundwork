@@ -65,14 +65,19 @@ describe('StorageService', () => {
 
   it('presignPut returns a signed S3 URL and an expiry', async () => {
     const svc = new StorageService(makeConfig());
-    const { url, expiresAt } = await svc.presignPut('public/items/x.jpg', 'image/jpeg');
+    const { url, expiresAt } = await svc.presignPut(
+      'public/items/x.jpg',
+      'image/jpeg',
+    );
     expect(url).toContain('test-bucket');
     expect(url).toContain('X-Amz-Signature=');
     expect(expiresAt.getTime()).toBeGreaterThan(Date.now());
   });
 
   it('headObject returns normalized metadata', async () => {
-    s3Mock.on(HeadObjectCommand).resolves({ ContentLength: 1234, ContentType: 'image/png' });
+    s3Mock
+      .on(HeadObjectCommand)
+      .resolves({ ContentLength: 1234, ContentType: 'image/png' });
     const svc = new StorageService(makeConfig());
     await expect(svc.headObject('k')).resolves.toEqual({
       contentLength: 1234,
@@ -82,7 +87,9 @@ describe('StorageService', () => {
 
   it('headObject returns null on 404', async () => {
     s3Mock.on(HeadObjectCommand).rejects(
-      Object.assign(new Error('Not Found'), { $metadata: { httpStatusCode: 404 } }),
+      Object.assign(new Error('Not Found'), {
+        $metadata: { httpStatusCode: 404 },
+      }),
     );
     const svc = new StorageService(makeConfig());
     await expect(svc.headObject('k')).resolves.toBeNull();
@@ -132,20 +139,26 @@ describe('StorageService', () => {
       }),
     );
     // Signing succeeds, proving the valid base64 key was used, not the junk file.
-    expect(svc.signPrivateUrl('private/docs/x.pdf', 300)).toContain('Signature=');
+    expect(svc.signPrivateUrl('private/docs/x.pdf', 300)).toContain(
+      'Signature=',
+    );
   });
 
   it('throws a clear error when the base64 key does not decode to a PEM', () => {
     const b64 = Buffer.from('totally not a pem', 'utf8').toString('base64');
     expect(
-      () => new StorageService(makeConfigFrom({ CLOUDFRONT_PRIVATE_KEY_B64: b64 })),
+      () =>
+        new StorageService(makeConfigFrom({ CLOUDFRONT_PRIVATE_KEY_B64: b64 })),
     ).toThrow(/CLOUDFRONT_PRIVATE_KEY_B64/);
   });
 
   describe('driver selection', () => {
     // The point of the local driver: a fresh clone boots with no cloud config at
     // all. Constructing the service with an empty config must not throw.
-    const emptyConfig = { get: () => undefined, getOrThrow: () => undefined } as any;
+    const emptyConfig = {
+      get: () => undefined,
+      getOrThrow: () => undefined,
+    } as any;
 
     it('defaults to the local driver and needs no AWS configuration', () => {
       const svc = new StorageService(emptyConfig);

@@ -1,0 +1,49 @@
+# The build context is the repo root: every image is built with
+#   docker build -f apps/<app>/Dockerfile .
+# so this is the only .dockerignore that applies.
+
+# Dependencies and build output — the images install and build from source.
+node_modules
+**/node_modules
+.next
+**/.next
+dist
+**/dist
+out
+**/out
+.turbo
+**/.turbo
+
+# Secrets. These must never enter an image layer.
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+keys
+**/keys
+storage
+**/storage
+*.pem
+
+# Tests, reports and local artefacts.
+coverage
+**/coverage
+test-results
+**/test-results
+playwright-report
+**/playwright-report
+**/*.tsbuildinfo
+
+# Repo furniture the build never reads.
+.git
+.github
+.vscode
+.idea
+docs
+*.md
+Dockerfile
+**/Dockerfile
+docker-compose*.yml
+.dockerignore

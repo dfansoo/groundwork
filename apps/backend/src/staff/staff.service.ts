@@ -1,4 +1,9 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { StaffRepository, UserWithRoles } from './staff.repository';
 import { CreateStaffDto } from './dto/create-staff.dto';
@@ -70,24 +75,50 @@ export class StaffService {
       this.repo.findManyStaff(filters, skip, take),
       this.repo.countStaff(filters),
     ]);
-    return buildPaginatedResult(rows.map((u) => this.toView(u)), total, page, limit);
+    return buildPaginatedResult(
+      rows.map((u) => this.toView(u)),
+      total,
+      page,
+      limit,
+    );
   }
 
-  async replaceRoles(id: string, roles: Role[], actorId: string): Promise<StaffView> {
-    await this.findOne(id);
-    const updated = await this.repo.replaceRoles(id, roles);
+  async replaceRoles(
+    id: string,
+    roles: Role[],
+    actorId: string,
+  ): Promise<StaffView> {
+    // (userId, role) is unique, so a client sending the same role twice would
+    // otherwise fail on the constraint rather than simply granting it once.
+    const wanted = [...new Set(roles)];
+
+    const current = await this.findOne(id);
+    await this.assertSuperAdminsSurvive(current, wanted);
+
+    const updated = await this.repo.replaceRoles(id, wanted);
     await this.audit.record({
       actorId,
       action: 'staff.roles.replace',
       entity: 'User',
       entityId: id,
-      meta: { roles },
+      meta: { roles: wanted },
     });
     return this.toView(updated);
   }
 
-  async deactivate(id: string, actorId: string): Promise<{ deactivated: true }> {
-    await this.findOne(id);
+  async deactivate(
+    id: string,
+    actorId: string,
+  ): Promise<{ deactivated: true }> {
+    // Revoking your own access logs you out of the console you would need in
+    // order to undo it.
+    if (id === actorId) {
+      throw new BadRequestException('You cannot revoke your own access');
+    }
+
+    const current = await this.findOne(id);
+    await this.assertSuperAdminsSurvive(current, []);
+
     await this.repo.deactivate(id);
     await this.audit.record({
       actorId,
@@ -96,5 +127,30 @@ export class StaffService {
       entityId: id,
     });
     return { deactivated: true };
+  }
+
+  /**
+   * Refuses any change that would leave the system with no SUPER_ADMIN.
+   *
+   * Demoting or revoking the last one is unrecoverable through the product: no
+   * remaining account can grant the role back, so the only way out is a hand-run
+   * SQL statement against production.
+   */
+  private async assertSuperAdminsSurvive(
+    current: StaffView,
+    nextRoles: Role[],
+  ): Promise<void> {
+    const losingSuperAdmin =
+      current.roles.includes(Role.SUPER_ADMIN) &&
+      !nextRoles.includes(Role.SUPER_ADMIN);
+
+    if (!losingSuperAdmin) return;
+
+    const holders = await this.repo.countHoldersOfRole(Role.SUPER_ADMIN);
+    if (holders <= 1) {
+      throw new BadRequestException(
+        'This is the last SUPER_ADMIN. Promote another account first, or nobody will be able to administer the system.',
+      );
+    }
   }
 }

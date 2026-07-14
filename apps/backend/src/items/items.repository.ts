@@ -35,11 +35,19 @@ export class ItemsRepository {
     return this.prisma.item.count({ where });
   }
 
-  /** Soft delete: the orphan sweep uses deletedAt to decide an asset is unreferenced. */
-  async softDelete(id: string): Promise<void> {
+  /**
+   * Soft delete: the orphan sweep uses deletedAt to decide an asset is unreferenced.
+   *
+   * `freedSlug` retires the old slug. The unique index on slug spans every row,
+   * deleted or not, so a soft-deleted item would otherwise reserve its title
+   * forever — and because the lookup filters deletedAt, the service's collision
+   * check would not even see it coming. Re-creating an item with a title you had
+   * once used would land on the constraint instead.
+   */
+  async softDelete(id: string, freedSlug: string): Promise<void> {
     await this.prisma.item.update({
       where: { id },
-      data: { deletedAt: new Date() },
+      data: { deletedAt: new Date(), slug: freedSlug },
     });
   }
 }

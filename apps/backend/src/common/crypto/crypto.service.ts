@@ -15,7 +15,9 @@ export class CryptoService {
   constructor(config: ConfigService) {
     const b64 = config.get<string>('DATA_ENCRYPTION_KEY');
     if (!b64) {
-      throw new InternalServerErrorException('DATA_ENCRYPTION_KEY is not configured');
+      throw new InternalServerErrorException(
+        'DATA_ENCRYPTION_KEY is not configured',
+      );
     }
     const key = Buffer.from(b64, 'base64');
     if (key.length !== KEY_LENGTH) {
@@ -54,7 +56,10 @@ export class CryptoService {
     try {
       const decipher = createDecipheriv(ALGORITHM, this.key, iv);
       decipher.setAuthTag(tag);
-      return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf8');
+      return Buffer.concat([
+        decipher.update(ciphertext),
+        decipher.final(),
+      ]).toString('utf8');
     } catch {
       throw new InternalServerErrorException('Decryption failed');
     }

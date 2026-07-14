@@ -1,4 +1,8 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Item, Prisma } from '@prisma/client';
 import { ItemsRepository } from './items.repository';
 import { AuditService } from '../audit/audit.service';
@@ -15,6 +19,18 @@ import { ListItemsQueryDto } from './dto/list-items-query.dto';
 
 /** Columns a client may sort by. Anything else falls back to createdAt desc. */
 const SORTABLE = ['title', 'createdAt', 'updatedAt'] as const;
+
+/** Prisma's "unique constraint failed", narrowed to a specific column. */
+function isUniqueViolation(err: unknown, field: string): boolean {
+  if (
+    !(err instanceof Prisma.PrismaClientKnownRequestError) ||
+    err.code !== 'P2002'
+  ) {
+    return false;
+  }
+  const target = (err.meta as { target?: string[] } | undefined)?.target;
+  return Array.isArray(target) ? target.includes(field) : true;
+}
 
 /**
  * The example feature. It exists to show, end to end, how a resource is built
@@ -34,16 +50,31 @@ export class ItemsService {
   async create(dto: CreateItemDto, actorId: string): Promise<Item> {
     const slug = slugify(dto.title);
     if (await this.repo.findBySlug(slug)) {
-      throw new ConflictException(`An item with the slug "${slug}" already exists`);
+      throw new ConflictException(
+        `An item with the slug "${slug}" already exists`,
+      );
     }
 
-    const item = await this.repo.create({
-      title: dto.title,
-      slug,
-      description: dto.description ?? null,
-      published: dto.published ?? false,
-      imageFileIds: dto.imageFileIds ?? [],
-    });
+    let item: Item;
+    try {
+      item = await this.repo.create({
+        title: dto.title,
+        slug,
+        description: dto.description ?? null,
+        published: dto.published ?? false,
+        imageFileIds: dto.imageFileIds ?? [],
+      });
+    } catch (err) {
+      // The check above is not atomic: two creates with the same title can both
+      // pass it and race to the insert. Losing that race is a conflict, not a
+      // crash — without this it surfaces to the client as a 500.
+      if (isUniqueViolation(err, 'slug')) {
+        throw new ConflictException(
+          `An item with the slug "${slug}" already exists`,
+        );
+      }
+      throw err;
+    }
 
     await this.audit.record({
       actorId,
@@ -71,7 +102,9 @@ export class ItemsService {
       const slug = slugify(dto.title);
       const clash = await this.repo.findBySlug(slug);
       if (clash && clash.id !== id) {
-        throw new ConflictException(`An item with the slug "${slug}" already exists`);
+        throw new ConflictException(
+          `An item with the slug "${slug}" already exists`,
+        );
       }
       data.title = dto.title;
       data.slug = slug;
@@ -94,7 +127,9 @@ export class ItemsService {
     const existing = await this.repo.findById(id);
     if (!existing) throw new NotFoundException('Item not found');
 
-    await this.repo.softDelete(id);
+    // Retire the slug on the way out so the title can be used again. See
+    // ItemsRepository.softDelete for why leaving it in place breaks re-creation.
+    await this.repo.softDelete(id, `${existing.slug}--deleted-${id}`);
 
     await this.audit.record({
       actorId,
@@ -139,7 +174,12 @@ export class ItemsService {
     }
 
     const { skip, take, page, limit } = getPaginationParams(query);
-    const orderBy = buildOrderBy(query.sortBy, query.order, SORTABLE, 'createdAt');
+    const orderBy = buildOrderBy(
+      query.sortBy,
+      query.order,
+      SORTABLE,
+      'createdAt',
+    );
 
     const [rows, total] = await Promise.all([
       this.repo.findMany(where, orderBy, skip, take),

@@ -1,0 +1,12 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": "..",
+  "// roots": "Without this, jest crawls from rootDir and walks Bun's symlinked node_modules tree, which never finishes. The unit config sidesteps it by rooting at src/.",
+  "roots": ["<rootDir>/src", "<rootDir>/test"],
+  "testRegex": "test/.*\\.int-spec\\.ts$",
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "testEnvironment": "node",
+  "testTimeout": 30000
+}

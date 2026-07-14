@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
@@ -30,7 +31,33 @@ interface AuthTokenPayload {
   roles: Role[];
 }
 
-export interface AuthUserResponse extends Omit<User, 'password'> {
+/**
+ * What the API is willing to say about a user.
+ *
+ * Spelled out rather than derived as `Omit<User, 'password'>`: a subtractive type
+ * leaks every column added to the model later, which is exactly how the lockout
+ * bookkeeping (failedLoginAttempts, lockedUntil) would have reached the client.
+ * Adding a field here has to be a decision.
+ */
+export interface PublicUser {
+  id: string;
+  email: string;
+  username: string;
+  avatar: string | null;
+  emailVerifiedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  /**
+   * Whether this account has a password at all. A provider-only account (signed
+   * up through Google) has none, and the frontend needs to know that to avoid
+   * offering a "change password" form that can only ever fail.
+   *
+   * The boolean, never the hash.
+   */
+  hasPassword: boolean;
+}
+
+export interface AuthUserResponse extends PublicUser {
   roles: UserRole[];
 }
 
@@ -105,12 +132,19 @@ export class AuthService {
     );
 
     if (!record || record.consumedAt || record.expiresAt <= new Date()) {
-      throw new BadRequestException('This reset link is invalid or has expired');
+      throw new BadRequestException(
+        'This reset link is invalid or has expired',
+      );
     }
 
-    await this.usersService.updateUser(record.userId, { password: newPassword });
+    await this.usersService.updateUser(record.userId, {
+      password: newPassword,
+    });
     await this.usersService.consumeResetTokensForUser(record.userId);
     await this.usersService.revokeAllAuthSessionsForUser(record.userId);
+    // Proving control of the mailbox is a stronger signal than the failure count
+    // that locked the account, so a completed reset lifts the lock.
+    await this.usersService.clearFailedLogins(record.userId);
 
     const user = await this.usersService.findById(record.userId);
     try {
@@ -137,20 +171,105 @@ export class AuthService {
     return this.issueAuthTokens(user);
   }
 
+  /**
+   * Consecutive failures before the account is locked, and for how long.
+   *
+   * This is the defence that survives an attacker rotating IPs, which is exactly
+   * what defeats the per-(IP, email) rate limit on this route. Ten guesses per
+   * fifteen minutes is a hard ceiling no amount of infrastructure raises.
+   *
+   * The cost is that anyone who knows an address can keep it locked. That is the
+   * accepted trade in every lockout scheme; the window is short on purpose, and
+   * a password reset clears the lock immediately.
+   */
+  private static readonly MAX_FAILED_LOGINS = 10;
+  private static readonly LOCKOUT_MS = 15 * 60 * 1000;
+
   async login(loginDto: LoginDto): Promise<AuthTokensResponse> {
+    const existing = await this.usersService.findByEmail(loginDto.email);
+
+    if (existing?.lockedUntil && existing.lockedUntil > new Date()) {
+      const minutes = Math.max(
+        1,
+        Math.ceil((existing.lockedUntil.getTime() - Date.now()) / 60_000),
+      );
+      throw new ForbiddenException(
+        `Too many failed attempts. Try again in ${minutes} minute${minutes === 1 ? '' : 's'}.`,
+      );
+    }
+
     const user = await this.usersService.validateUserPassword(
       loginDto.email,
       loginDto.password,
     );
 
     if (!user) {
+      // Only a known user can be counted — there is no row to count against
+      // otherwise. Unknown addresses are still bounded by LoginThrottlerGuard.
+      if (existing) {
+        await this.usersService.recordFailedLogin(
+          existing.id,
+          AuthService.MAX_FAILED_LOGINS,
+          AuthService.LOCKOUT_MS,
+        );
+      }
       throw new UnauthorizedException('Invalid credentials');
     }
+
+    await this.usersService.clearFailedLogins(user.id);
 
     return this.issueAuthTokens(user);
   }
 
-  async getProfile(userId: string): Promise<Omit<User, 'password'>> {
+  /**
+   * Changing a password revokes every other session, on the assumption that the
+   * reason you are changing it is that someone else may hold one.
+   */
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<{ message: string }> {
+    const user = await this.usersService.findById(userId);
+
+    if (!user.password) {
+      throw new BadRequestException(
+        'This account signs in with a provider and has no password to change. Use "forgot password" to set one.',
+      );
+    }
+
+    const valid = await this.usersService.validateUserPassword(
+      user.email,
+      currentPassword,
+    );
+    if (!valid) {
+      throw new UnauthorizedException('Your current password is incorrect');
+    }
+
+    if (currentPassword === newPassword) {
+      throw new BadRequestException(
+        'The new password must differ from the current one',
+      );
+    }
+
+    await this.usersService.updateUser(userId, { password: newPassword });
+    await this.usersService.revokeAllAuthSessionsForUser(userId);
+
+    try {
+      await this.mailService.sendPasswordChanged(user.email, {
+        name: user.username,
+      });
+    } catch (err) {
+      this.logger.error(
+        `Failed to send password-changed email to ${user.id}`,
+        err as Error,
+      );
+    }
+
+    return { message: 'Your password has been updated.' };
+  }
+
+  async getProfile(userId: string): Promise<PublicUser> {
     const user = await this.usersService.findOne({ id: userId });
     return this.buildProfileResponse(user);
   }
@@ -308,11 +427,12 @@ export class AuthService {
       emailVerifiedAt: user.emailVerifiedAt,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
+      hasPassword: Boolean(user.password),
       roles: user.roles,
     };
   }
 
-  private buildProfileResponse(user: User): Omit<User, 'password'> {
+  private buildProfileResponse(user: User): PublicUser {
     return {
       id: user.id,
       email: user.email,
@@ -321,6 +441,7 @@ export class AuthService {
       emailVerifiedAt: user.emailVerifiedAt,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
+      hasPassword: Boolean(user.password),
     };
   }
 

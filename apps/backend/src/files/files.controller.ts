@@ -52,7 +52,10 @@ export class FilesController {
   @Post(':id/confirm')
   @RequirePermissions(Permission.ASSETS_WRITE)
   @ApiOperation({ summary: 'Confirm an upload (verify + finalize)' })
-  confirm(@Param('id') id: string, @Request() req: { user: AuthenticatedUser }) {
+  confirm(
+    @Param('id') id: string,
+    @Request() req: { user: AuthenticatedUser },
+  ) {
     return this.filesService.confirm(id, req.user.id);
   }
 

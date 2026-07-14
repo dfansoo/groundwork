@@ -33,14 +33,20 @@ export class TemplateRenderer {
     const layout = this.compile('layout.hbs', false);
     return {
       subject: `${SUBJECTS[name]} — ${this.appName}`,
-      html: layout({ body: new Handlebars.SafeString(bodyHtml), appName: this.appName }),
+      html: layout({
+        body: new Handlebars.SafeString(bodyHtml),
+        appName: this.appName,
+      }),
       // Plaintext parts must not be HTML-escaped (Handlebars escapes `{{ }}` by
       // default regardless of extension, which would mangle URLs like `?token=`).
       text: this.compile(`${name}.text.hbs`, true)(vars),
     };
   }
 
-  private compile(file: string, noEscape: boolean): Handlebars.TemplateDelegate {
+  private compile(
+    file: string,
+    noEscape: boolean,
+  ): Handlebars.TemplateDelegate {
     const cached = this.cache.get(file);
     if (cached) return cached;
     const source = fs.readFileSync(path.join(this.dir, file), 'utf8');

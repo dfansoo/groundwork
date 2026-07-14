@@ -5,14 +5,20 @@ describe('buildOrderBy', () => {
   const allowed = ['title', 'basePriceMinor', 'createdAt'] as const;
 
   it('uses a whitelisted column with the given order', () => {
-    expect(buildOrderBy('title', 'asc', allowed, 'createdAt')).toEqual({ title: 'asc' });
+    expect(buildOrderBy('title', 'asc', allowed, 'createdAt')).toEqual({
+      title: 'asc',
+    });
   });
 
   it('falls back to the default column (desc) when sortBy is unknown', () => {
-    expect(buildOrderBy('hacker; DROP', 'asc', allowed, 'createdAt')).toEqual({ createdAt: 'desc' });
+    expect(buildOrderBy('hacker; DROP', 'asc', allowed, 'createdAt')).toEqual({
+      createdAt: 'desc',
+    });
   });
 
   it('falls back to the default column (desc) when sortBy is absent', () => {
-    expect(buildOrderBy(undefined, 'asc', allowed, 'createdAt')).toEqual({ createdAt: 'desc' });
+    expect(buildOrderBy(undefined, 'asc', allowed, 'createdAt')).toEqual({
+      createdAt: 'desc',
+    });
   });
 });

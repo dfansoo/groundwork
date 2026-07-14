@@ -55,7 +55,8 @@ export class UsersRepository {
     return {
       ...input,
       accessToken: this.crypto.encryptNullable(input.accessToken) ?? undefined,
-      refreshToken: this.crypto.encryptNullable(input.refreshToken) ?? undefined,
+      refreshToken:
+        this.crypto.encryptNullable(input.refreshToken) ?? undefined,
       idToken: this.crypto.encryptNullable(input.idToken) ?? undefined,
     };
   }
@@ -72,7 +73,10 @@ export class UsersRepository {
   private decryptUserAccounts(
     user: UserWithRolesAndAccounts,
   ): UserWithRolesAndAccounts {
-    return { ...user, accounts: user.accounts.map((a) => this.decryptAccount(a)) };
+    return {
+      ...user,
+      accounts: user.accounts.map((a) => this.decryptAccount(a)),
+    };
   }
 
   async create(
@@ -398,6 +402,40 @@ export class UsersRepository {
   async findAuthSessionById(sessionId: string): Promise<AuthSession | null> {
     return this.prisma.authSession.findUnique({
       where: { id: sessionId },
+    });
+  }
+
+  /**
+   * Increments the failure counter and, on reaching `threshold`, stamps a lock.
+   * Incrementing inside the UPDATE (rather than read-then-write in the service)
+   * keeps concurrent failed logins from clobbering each other's count.
+   */
+  async recordFailedLogin(
+    userId: string,
+    threshold: number,
+    lockMs: number,
+  ): Promise<void> {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: { failedLoginAttempts: { increment: 1 } },
+      select: { failedLoginAttempts: true },
+    });
+
+    if (user.failedLoginAttempts >= threshold) {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          lockedUntil: new Date(Date.now() + lockMs),
+          failedLoginAttempts: 0,
+        },
+      });
+    }
+  }
+
+  async clearFailedLogins(userId: string): Promise<void> {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { failedLoginAttempts: 0, lockedUntil: null },
     });
   }
 }

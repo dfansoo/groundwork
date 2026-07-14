@@ -30,7 +30,9 @@ export class FilesLocalController {
     private readonly config: ConfigService,
   ) {
     if (this.config.get<string>('FILES_DRIVER') === 's3') {
-      throw new Error('FilesLocalController must not be registered when FILES_DRIVER=s3');
+      throw new Error(
+        'FilesLocalController must not be registered when FILES_DRIVER=s3',
+      );
     }
   }
 

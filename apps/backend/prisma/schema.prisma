@@ -21,6 +21,11 @@ model User {
   emailVerifiedAt     DateTime?
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
+  /// Consecutive failed logins, reset to 0 on any success. Feeds the lockout in
+  /// AuthService.login — the part that bounds guesses when an attacker rotates
+  /// IPs and so gets a fresh bucket from the per-(IP, email) rate limit.
+  failedLoginAttempts Int                  @default(0)
+  lockedUntil         DateTime?
   roles               UserRole[]
   accounts            Account[]
   sessions            AuthSession[]
@@ -72,10 +77,16 @@ model PasswordResetToken {
 }
 
 model UserRole {
-  id     String @id @default(cuid())
-  user   User   @relation(fields: [userId], references: [id])
+  id String @id @default(cuid())
+  /// Cascades, like every other row hanging off a User. Without it a User can
+  /// never be deleted — registration grants the USER role immediately, so every
+  /// account has at least one of these and user.delete() fails on the foreign key.
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId String
   role   Role
+
+  @@unique([userId, role])
+  @@index([userId])
 }
 
 enum Role {

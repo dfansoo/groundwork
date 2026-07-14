@@ -44,7 +44,10 @@ export class ItemsController {
   @Get(':slug')
   @ApiOperation({ summary: 'Get one published item by slug' })
   @ApiResponse({ status: 200, description: 'The item.' })
-  @ApiResponse({ status: 404, description: 'No published item with that slug.' })
+  @ApiResponse({
+    status: 404,
+    description: 'No published item with that slug.',
+  })
   findOne(@Param('slug') slug: string) {
     return this.items.findPublishedBySlug(slug);
   }
@@ -76,7 +79,10 @@ export class AdminItemsController {
   @RequirePermissions(Permission.ITEMS_WRITE)
   @ApiOperation({ summary: 'Create an item' })
   @ApiResponse({ status: 201, description: 'Item created.' })
-  @ApiResponse({ status: 409, description: 'An item with that slug already exists.' })
+  @ApiResponse({
+    status: 409,
+    description: 'An item with that slug already exists.',
+  })
   create(
     @Body() dto: CreateItemDto,
     @Request() req: { user: AuthenticatedUser },

@@ -43,7 +43,9 @@ export class FilesRepository {
   }
 
   async count(where: Prisma.FileAssetWhereInput): Promise<number> {
-    return this.prisma.fileAsset.count({ where: { ...where, deletedAt: null } });
+    return this.prisma.fileAsset.count({
+      where: { ...where, deletedAt: null },
+    });
   }
 
   async softDelete(id: string): Promise<void> {

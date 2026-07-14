@@ -4,11 +4,18 @@ import { LogMailTransport } from './log.transport';
 
 describe('LogMailTransport', () => {
   it('logs the message and resolves', async () => {
-    const spy = jest.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);
+    const spy = jest
+      .spyOn(Logger.prototype, 'log')
+      .mockImplementation(() => undefined);
     const transport = new LogMailTransport();
 
     await expect(
-      transport.send({ to: 'a@b.com', subject: 'Hi', html: '<p>x</p>', text: 'x' }),
+      transport.send({
+        to: 'a@b.com',
+        subject: 'Hi',
+        html: '<p>x</p>',
+        text: 'x',
+      }),
     ).resolves.toBeUndefined();
 
     expect(spy).toHaveBeenCalledTimes(1);
