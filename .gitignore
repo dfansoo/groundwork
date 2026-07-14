@@ -43,3 +43,18 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Test + build artifacts
+test-results/
+playwright-report/
+coverage/
+.turbo/
+*.tsbuildinfo
+
+# Secrets — never commit
+.env
+.env.*
+!.env.example
+keys/
+storage/
+*.pem
