@@ -1,6 +1,30 @@
+<div align="center">
+
 # groundwork
 
-A fullstack boilerplate: **Next.js web + admin console, NestJS API**, in a Turborepo monorepo. Authentication, RBAC, audit logging, file uploads and transactional email already work. There is no domain code to delete — just one example feature to copy.
+**A fullstack boilerplate that already works.**
+Next.js web + admin console, NestJS API, in a Turborepo monorepo.
+Auth, RBAC, audit logging, file uploads and transactional email are done — there is no domain code to delete, just one example feature to copy.
+
+[![CI](https://github.com/dfansoo/groundwork/actions/workflows/ci.yml/badge.svg)](https://github.com/dfansoo/groundwork/actions/workflows/ci.yml)
+
+<br />
+
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Next.js](https://img.shields.io/badge/Next.js_16-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React_19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
+[![NestJS](https://img.shields.io/badge/NestJS_11-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)](https://nestjs.com/)
+[![Prisma](https://img.shields.io/badge/Prisma_7-2D3748?style=for-the-badge&logo=prisma&logoColor=white)](https://www.prisma.io/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+
+[![Turborepo](https://img.shields.io/badge/Turborepo-EF4444?style=for-the-badge&logo=turborepo&logoColor=white)](https://turbo.build/)
+[![Bun](https://img.shields.io/badge/Bun-000000?style=for-the-badge&logo=bun&logoColor=white)](https://bun.sh/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_v4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![shadcn/ui](https://img.shields.io/badge/shadcn/ui-000000?style=for-the-badge&logo=shadcnui&logoColor=white)](https://ui.shadcn.com/)
+[![Playwright](https://img.shields.io/badge/Playwright-2EAD33?style=for-the-badge&logo=playwright&logoColor=white)](https://playwright.dev/)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
+
+</div>
 
 ```bash
 gh repo create my-app --template dfansoo/groundwork --private --clone
@@ -10,11 +34,21 @@ gh repo create my-app --template dfansoo/groundwork --private --clone
 
 | | |
 |---|---|
-| **Monorepo** | Turborepo 2.9, Bun workspaces |
-| **Web / Admin** | Next.js 16, React 19, Tailwind v4, shadcn (`base-maia`, Base UI), TanStack Query |
-| **API** | NestJS 11, Prisma 7, PostgreSQL |
-| **Auth** | NestJS issues ES256 JWTs; NextAuth v5 is a session shim |
-| **Tests** | Vitest (web/admin), Jest (backend), Playwright (e2e, against the real API) |
+| <img src="https://cdn.simpleicons.org/turborepo/EF4444" width="16" height="16" align="center" /> **Monorepo** | Turborepo 2.9, Bun workspaces |
+| <img src="https://cdn.simpleicons.org/nextdotjs/000000/FFFFFF" width="16" height="16" align="center" /> **Web / Admin** | Next.js 16, React 19, Tailwind v4, shadcn (`base-maia`, Base UI), TanStack Query |
+| <img src="https://cdn.simpleicons.org/nestjs/E0234E" width="16" height="16" align="center" /> **API** | NestJS 11, Prisma 7, PostgreSQL |
+| <img src="https://cdn.simpleicons.org/auth0/EB5424" width="16" height="16" align="center" /> **Auth** | NestJS issues ES256 JWTs; NextAuth v5 is a session shim |
+| <img src="https://cdn.simpleicons.org/vitest/6E9F18" width="16" height="16" align="center" /> **Tests** | Vitest (web/admin), Jest (backend), Playwright (e2e, against the real API) |
+
+## What's already built
+
+- **Auth** — email/password + Google OAuth, ES256 JWTs, refresh rotation, session listing and revocation, password reset
+- **RBAC** — five roles, seven permissions, enforced by guards on every route, not merely hidden in the UI
+- **Audit log** — every mutation recorded against the acting user, with a CSV export
+- **File uploads** — presigned uploads, an orphan sweep, and a disk driver, so you need **no AWS account to run it**
+- **Transactional email** — Handlebars templates; renders to the server log in dev, Brevo in prod
+- **Typed API client** — generated from the backend's OpenAPI contract, so frontend types *cannot* drift from the API
+- **Tests that mean something** — e2e runs against the real backend and database, not a mock
 
 ## Layout
 

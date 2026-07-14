@@ -1,7 +1,6 @@
 import NextAuth, { type NextAuthResult } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 import Credentials from "next-auth/providers/credentials";
-import { env } from "@/lib/env";
 import {
   loginWithPassword,
   refreshTokens,
@@ -45,7 +44,7 @@ const nextAuth = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user, account, profile }) {
+    async jwt({ token, user }) {
       // First sign-in via credentials → tokens are on the authorized user.
       if (user?.backend) {
         return applyBackend(token, user.backend);

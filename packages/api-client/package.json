@@ -19,6 +19,7 @@
   "devDependencies": {
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
+    "eslint": "^9",
     "openapi-typescript": "^7.6.0",
     "typescript": "^5",
     "vitest": "^3.2.4"
