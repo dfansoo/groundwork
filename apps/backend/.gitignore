@@ -138,9 +138,6 @@ pnpm-lock.yaml
 
 /generated/prisma
 /keys
-# SDD scratch
-
-
 # Local file storage (FILES_DRIVER=local)
 /storage
 
