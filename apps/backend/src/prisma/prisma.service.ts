@@ -30,6 +30,9 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
   }
 
   async onModuleInit() {
+    // The OpenAPI generator boots the module graph purely to read route metadata.
+    // It has to work on a clean clone, where no database exists yet.
+    if (process.env.OPENAPI_ONLY === '1') return;
     await this.$connect();
   }
 
