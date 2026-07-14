@@ -1,19 +1,21 @@
-import { Button } from "@workspace/ui/components/button"
+import Link from "next/link";
+import { Container } from "@/components/layout/container";
+import { Button } from "@workspace/ui/components/button";
+import { site } from "@/lib/site";
 
-export default function Page() {
+export default function HomePage() {
   return (
-    <div className="flex min-h-svh p-6">
-      <div className="flex max-w-md min-w-0 flex-col gap-4 text-sm leading-loose">
-        <div>
-          <h1 className="font-medium">Project ready!</h1>
-          <p>You may now add components and start building.</p>
-          <p>We&apos;ve already added the button component for you.</p>
-          <Button className="mt-2">Button</Button>
-        </div>
-        <div className="text-muted-foreground font-mono text-xs">
-          (Press <kbd>d</kbd> to toggle dark mode)
-        </div>
+    <Container className="flex flex-col items-start gap-6 py-24">
+      <h1 className="font-heading max-w-2xl text-5xl font-semibold tracking-tight text-balance">
+        {site.name}
+      </h1>
+      <p className="text-muted-foreground max-w-xl text-lg text-pretty">{site.description}</p>
+      <div className="flex gap-3">
+        <Button render={<Link href="/items" />}>Browse items</Button>
+        <Button variant="outline" render={<Link href="/login" />}>
+          Sign in
+        </Button>
       </div>
-    </div>
-  )
+    </Container>
+  );
 }
