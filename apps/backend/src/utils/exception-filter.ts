@@ -83,7 +83,7 @@ export class CustomExceptionFilter implements ExceptionFilter {
 
         if (response.details !== undefined) {
           // An explicit `details` (e.g. the field-error array thrown by the
-          // hotels/tours image validation) is passed through flat — wrapping
+          // image validation) is passed through flat — wrapping
           // it again would produce `details: { details: [...] }` and break
           // per-field 422 mapping on the client.
           details = response.details;

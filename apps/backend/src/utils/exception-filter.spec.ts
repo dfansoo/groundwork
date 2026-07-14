@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { CustomExceptionFilter } from './exception-filter';
 
-function mockHost(method = 'POST', url = '/admin/hotels') {
+function mockHost(method = 'POST', url = '/admin/items') {
   const json = jest.fn();
   const status = jest.fn(() => ({ json }));
   const response = {
@@ -28,7 +28,7 @@ describe('CustomExceptionFilter', () => {
 
   it('emits a flat `details` array for validation exceptions (no double-wrap)', () => {
     const { host, json } = mockHost();
-    // The exact shape hotels/tours services throw for image validation.
+    // The exact shape a feature service throws for image validation.
     const details = [
       {
         property: 'imageFileIds',

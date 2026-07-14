@@ -79,7 +79,7 @@ describe('AuditService', () => {
   it('role filter with no matching users yields an empty (in: []) filter, not an unfiltered list', async () => {
     repo.findUserIdsByRole.mockResolvedValue([]);
 
-    await svc.list({ page: 1, limit: 20, order: 'desc', role: 'GUIDE' } as any);
+    await svc.list({ page: 1, limit: 20, order: 'desc', role: 'EDITOR' } as any);
 
     const where = repo.findMany.mock.calls[0][0];
     expect(where.actorId).toEqual({ in: [] });

@@ -10,6 +10,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { StaffModule } from './staff/staff.module';
 import { AuditModule } from './audit/audit.module';
+import { FilesModule } from './files/files.module';
 import { MailModule } from './mail/mail.module';
 import { CryptoModule } from './common/crypto/crypto.module';
 import { validationSchema } from './config/env.validation';
@@ -27,6 +28,7 @@ import { validationSchema } from './config/env.validation';
     AuthModule,
     StaffModule,
     AuditModule,
+    FilesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
