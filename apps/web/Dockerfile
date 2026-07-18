@@ -45,7 +45,7 @@ RUN cd apps/web && bun run build
 # ---------------------------------------------------------------------------
 # runner — Node, not Bun: `next build --output standalone` emits a plain server.
 # ---------------------------------------------------------------------------
-FROM node:22-alpine AS runner
+FROM node:26-alpine AS runner
 WORKDIR /repo
 
 ENV NODE_ENV=production
