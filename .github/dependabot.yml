@@ -8,6 +8,20 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
+    ignore:
+      # Held back because the lint/type toolchain has not caught up, not because
+      # the versions are unwanted. Each would turn every CI run red until then.
+      # Lift the entry once the paired plugin ships support.
+      #
+      # TypeScript 7 (the native compiler): typescript-eslint peers on
+      # `typescript >=4.8.4 <6.1.0`, so TS 7 crashes the parser on every lint.
+      - dependency-name: "typescript"
+        versions: [">=7"]
+      # ESLint 10: eslint-plugin-react (latest 7.37.5) peers on `eslint ^…^9.7`
+      # and calls context.getFilename(), removed in ESLint 10 — the React rules
+      # throw before linting a single file.
+      - dependency-name: "eslint"
+        versions: [">=10"]
     groups:
       # One PR per ecosystem rather than thirty. A framework's packages are
       # released and versioned together, so splitting them across PRs produces
