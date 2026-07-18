@@ -4,7 +4,7 @@
 #
 # A Bun workspace only resolves from the root, so the image installs from there.
 
-FROM oven/bun:1.3.9-alpine AS base
+FROM oven/bun:1.3.14-alpine AS base
 WORKDIR /repo
 
 # ---------------------------------------------------------------------------
