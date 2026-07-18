@@ -1,0 +1,50 @@
+name: Sync Dependabot bun.lock
+
+# Dependabot bumps the versions in package.json but leaves bun.lock untouched in a
+# Bun *workspace* — a known, still-open bug (dependabot/dependabot-core#14223). A
+# stale lockfile fails every `bun install --frozen-lockfile` in CI, so nothing in a
+# Dependabot PR ever goes green.
+#
+# This regenerates bun.lock to match the bumped manifests and commits it back onto
+# the PR branch. That is what keeps the merge honest: if the stale lockfile were
+# merged as-is, main's own frozen install would break on the very next push.
+#
+# The push uses GITHUB_TOKEN, which by design does not start a fresh CI run. It does
+# not need to — ci.yml installs non-frozen for Dependabot, so the bump is already
+# tested against the correct tree on the first run; this job only settles what gets
+# committed. Add a PAT as the checkout `token` if you want the lockfile commit to
+# trigger its own run.
+
+on:
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-lockfile:
+    if: ${{ github.actor == 'dependabot[bot]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.head_ref }}
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.9
+
+      - name: Regenerate bun.lock to match the bumped manifests
+        run: bun install
+
+      - name: Commit it back if Dependabot left it stale
+        run: |
+          if git diff --quiet -- bun.lock; then
+            echo "bun.lock already in sync — nothing to do."
+            exit 0
+          fi
+          git config user.name "dependabot[bot]"
+          git config user.email "49699333+dependabot[bot]@users.noreply.github.com"
+          git add bun.lock
+          git commit -m "chore(deps): sync bun.lock"
+          git push
