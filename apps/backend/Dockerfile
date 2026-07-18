@@ -67,7 +67,7 @@ RUN cd apps/backend && bun run build
 # ---------------------------------------------------------------------------
 # runner — Node, not Bun: nothing here needs a bundler.
 # ---------------------------------------------------------------------------
-FROM node:22-alpine AS runner
+FROM node:26-alpine AS runner
 WORKDIR /repo
 RUN apk add --no-cache openssl dumb-init
 
