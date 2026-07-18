@@ -6,7 +6,7 @@
 # there. Everything below keeps the repo's own layout (/repo/apps/backend), which
 # is what keeps the workspace symlinks in node_modules valid at runtime.
 
-FROM oven/bun:1.3.9-alpine AS base
+FROM oven/bun:1.3.14-alpine AS base
 WORKDIR /repo
 # Prisma's query engine is linked against OpenSSL.
 RUN apk add --no-cache openssl
