@@ -46,7 +46,7 @@
     "@workspace/typescript-config": "workspace:*",
     "eslint": "^9",
     "jsdom": "^29.1.1",
-    "typescript": "^5",
+    "typescript": "^6",
     "vite": "^8",
     "vitest": "^4.1.10"
   }
